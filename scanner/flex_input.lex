@@ -7,6 +7,7 @@ decNumber {digit}+
 octNumber 0x{hexCode}+
 number ({decNumber}|{octNumber})
 identifier ({char}|_)({char}|{digit}|_)*
+lineComment "//".*
 
   void echoLine(char* s) { printf("%s\n", s); }
 
@@ -47,7 +48,8 @@ not     echoLine(yytext);
 {octNumber}     printf("num %ld\n", strtol(yytext+2, NULL, 16));
 
 [" "\t\n] ;
-.     ;
+{lineComment}   ;
+.     printf("Found unexpected character %c\n", *yytext);return 1;
 
 
 %%
