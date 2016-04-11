@@ -1,4 +1,4 @@
-  int num_lines = 0, num_chars = 0;
+  int lexerError = 0;
 
 digit [0-9]
 char [a-zA-Z]
@@ -49,7 +49,7 @@ not     echoLine(yytext);
 
 [" "\t\n] ;
 {lineComment}   ;
-.     printf("Found unexpected character %c\n", *yytext);return 1;
+.     printf("Found unexpected character %c\n", *yytext);lexerError = 1;return 1;
 
 
 %%
@@ -57,7 +57,7 @@ not     echoLine(yytext);
 int main()
 {
   yylex();
-  return 0;
+  return lexerError;
 }
 
 int yywrap(void)
