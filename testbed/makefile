@@ -1,16 +1,19 @@
 AS_OPTS = -c 
-C_OPTS= -std=gnu99
+C_OPTS= -std=gnu99 -g 
 
+all: scanner
 
-all: asmb.o main.o
-	gcc -g $^ -o main
+scanner.c: flex_input.flex
+	flex -o $@ $<
 
-main.o: main.c
-	gcc $(C_OPTS) -g -c $< -o $@
+scanner.o: scanner.c
+	gcc $(C_OPTS) -c $<
 
+scanner: scanner.o
+	gcc $(C_OPTS) $^ -o $@
 
-asmb.o: asmb.s
-	gcc -c -g asmb.s 
 
 clean:
 	rm *.o
+	rm scanner.c
+	rm scanner
