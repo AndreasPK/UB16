@@ -3,7 +3,7 @@ C_OPTS= -std=gnu99 -g
 
 all: scanner
 
-scanner.c: flex_input.flex
+scanner.c: flex_input.lex
 	flex -o $@ $<
 
 scanner.o: scanner.c
