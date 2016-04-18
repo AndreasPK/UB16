@@ -170,7 +170,7 @@ num: NUMBER ;
 
 int main()
 {
-  yydebug = 1;
+//  yydebug = 1;
   int pres = yyparse();
   if(pres == 0) return 0;
   if(pres == 1) return 2;
