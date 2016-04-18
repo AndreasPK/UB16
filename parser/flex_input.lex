@@ -55,7 +55,7 @@ not     return NOT; //echoLine(yytext);
 
 [" "\t\n] ;
 {lineComment}   ;
-.     printf("Found unexpected character %c\n", *yytext);lexerError = 1;return 1;
+.     fprintf(stderr, "Lexer Error: Found unexpected character %c\n", *yytext);exit(1);
 
 
 %%

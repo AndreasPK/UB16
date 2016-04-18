@@ -1,4 +1,7 @@
-do stuff until 0x100 < 5000 return end
-;
+function1(arg1,arg2)@@@
+	id: do
+		234^ -> var abc := not - - -- not 324;
+		break;
+	end;
+end;
 
-//Comments!!!!

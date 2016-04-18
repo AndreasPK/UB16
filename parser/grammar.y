@@ -1,8 +1,13 @@
 %{
   #include <stdio.h>
+  #include <string.h>
   int yylex(void);
   void yyerror(char* s);
+  void msg(char* s);
+  const char* someNumber = "someNumber";
 %}
+
+%define parse.trace
 
 %union
 {
@@ -37,45 +42,47 @@
 
 %token ID
 %token NUMBER
+%token LEXER_ERROR
+
+%type <name> ID id stat stats funcdef program term expr
 
 %%
 
 //Angabe:
-//Program: { Funcdef ’;’ }  
-//       ;  
+//Program: { Funcdef ’;’ }
+//       ;
 //
 
-program: funcList { } ;
+program: program funcdef SEMIC { msg("funcDef"); }
+       |
+       ;
 
-funcList: funcdef SEMIC funcList { }
-        | /*Empty*/
-        ;
-
-//Funcdef: id ’(’ Pars ’)’ Stats end  /* Funktionsdefinition */  
-//       ;  
+//Funcdef: id ’(’ Pars ’)’ Stats end  /* Funktionsdefinition */
+//       ;
 
 
-funcdef: id BRACEL pars BRACER stats END {};
+funcdef: id BRACEL parameterDef BRACER stats END { msg("funcDef"); };
 
-//Pars: { id ’,’ } [ id ]     /* Parameterdefinition */  
-//    ;  
+//Pars: { id ’,’ } [ id ]     /* Parameterdefinition */
+//    ;
 
-pars: pars COLON id
-    | id
-    ;
+parameterDef: id COMMA parameterDef
+            | id
+            |
+            ;
 
-//Stats: { Stat ’;’ }  
-//     ;  
+//Stats: { Stat ’;’ }
+//     ;
 stats: stat SEMIC stats
      |
      ;
 
-//Stat: return Expr  
-//    | DoStat  
-//    | var id ’:=’ Expr /* Variablendefinition */  
-//    | Lexpr ’:=’ Expr  /* Zuweisung */  
-//    | Term  
-//    ;  
+//Stat: return Expr
+//    | DoStat
+//    | var id ’:=’ Expr /* Variablendefinition */
+//    | Lexpr ’:=’ Expr  /* Zuweisung */
+//    | Term
+//    ;
 
 stat: RETURN expr
     | dostat
@@ -84,9 +91,9 @@ stat: RETURN expr
     | term
     ;
 
-//DoStat: [ id ’:’ ] /* Labeldefinition */  
-//        do { Guarded ’;’ } end  
-//      ;  
+//DoStat: [ id ’:’ ] /* Labeldefinition */
+//        do { Guarded ’;’ } end
+//      ;
 labeldef: id COLON
         |
         ;
@@ -97,72 +104,77 @@ guardedlist: guarded SEMIC guardedlist ;
            |
            ;
 
-//Guarded: Expr ’->’ Stats  
-//         ( continue | break ) [ id ] /* Labelverwendung */  
-//       ;  
+//Guarded: Expr ’->’ Stats
+//         ( continue | break ) [ id ] /* Labelverwendung */
+//       ;
 
-guarded: expr ARROWR stats cbswitch maybeid;
-
-cbswitch: CONTINUE
-        | BREAK
-        ;
+guarded: expr ARROWR stats CONTINUE maybeid
+       | expr ARROWR stats BREAK maybeid
+       ;
 
 maybeid: id
        |
        ;
 
-//Lexpr: id        /* schreibender Variablenzugriff */  
-//     | Term ’^’ /* schreibender Speicherzugriff */  
-//     ;  
+//Lexpr: id        /* schreibender Variablenzugriff */
+//     | Term ’^’ /* schreibender Speicherzugriff */
+//     ;
 
 lexpr: id
      | term CIRCUMFLEX
      ;
 
-//Expr: { not | ’-’ } Term  
-//    | Term ’^’   /* lesender Speicherzugriff */  
-//    | Term { ’+’ Term }  
-//    | Term { ’*’ Term }  
-//    | Term { or Term }  
-//    | Term ( ’<’ | ’=’ ) Term  
-//    ;  
-
-preexpr: preexpr NOT
-       | preexpr MINUS
-       |
-       ;
-
-expr: preexpr term
-    | term CIRCUMFLEX
-    | term PLUS term
-    ; //TODO: Finish
-
-//Term: ’(’ Expr ’)’  
-//    | num  
-//    | id                               /* Variablenverwendung */  
-//    | id ’(’ { Expr ’,’ } [ Expr ] ’)’ /* Funktionsaufruf */  
+//Expr: { not | ’-’ } Term
+//    | Term ’^’   /* lesender Speicherzugriff */
+//    | Term { ’+’ Term }
+//    | Term { ’*’ Term }
+//    | Term { or Term }
+//    | Term ( ’<’ | ’=’ ) Term
 //    ;
 
-exprlist: exprlist expr
-        | expr COMMA
-        |
-        ;
+expr: NOT expr
+    | MINUS expr
+    | term
+    | term CIRCUMFLEX
+    | term PLUS term
+    | term STAR term
+    | term OR term
+    | term LESS term
+    | term EQUAL term
+    ; //TODO: Finish
 
-term: BRACEL expr BRACER
-    | num
+//Term: ’(’ Expr ’)’
+//    | num
+//    | id                               /* Variablenverwendung */
+//    | id ’(’ { Expr ’,’ } [ Expr ] ’)’ /* Funktionsaufruf */
+//    ;
+
+
+term: BRACEL expr BRACER { $$ = $2; }
+    | num { $$ = (char*) someNumber; }
+    | funcCall
     | id
-    | id BRACEL exprlist BRACER
     ;
 
-id: ID ;
+funcCall: id BRACEL arguments BRACER ;
+
+arguments: expr
+         | expr COMMA arguments
+         |
+         ;
+
+id: ID { printf("Found id: %s\n", $1); $$ = $1; };
 
 num: NUMBER ;
 %%
 
 int main()
 {
-  yyparse();
-  return 0;
+  yydebug = 1;
+  int pres = yyparse();
+  if(pres == 0) return 0;
+  if(pres == 1) return 2;
+  return pres;
 }
 
 void yyerror(char* s)
@@ -170,3 +182,7 @@ void yyerror(char* s)
   fprintf(stderr, "%s\n", s);
 }
 
+void msg(char* s)
+{
+  printf("%s\n", s);
+}

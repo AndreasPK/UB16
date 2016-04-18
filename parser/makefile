@@ -7,7 +7,7 @@ lexer.c: flex_input.lex
 	flex -o $@ $<
 
 grammar.h grammar.c: grammar.y
-	yacc -o grammar.c -d $<
+	bison -v -o grammar.c -d $<
 
 parser.o: grammar.c
 	gcc $(C_OPTS) -c $< -o $@
@@ -25,3 +25,4 @@ test: parser
 clean:
 	rm *.o *.h *.c
 	rm parser
+	rm grammar.output
