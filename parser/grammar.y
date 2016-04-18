@@ -136,12 +136,32 @@ expr: NOT expr
     | MINUS expr
     | term
     | term CIRCUMFLEX
-    | term PLUS term
-    | term STAR term
-    | term OR term
-    | term LESS term
-    | term EQUAL term
+    | pexpr
+    | mulexpr
+    | orexpr
+    | lessexpr
+    | eqexpr
     ; //TODO: Finish
+
+pexpr: term PLUS pexpr
+     | term
+     ;
+
+orexpr: term OR orexpr
+      | term
+      ;
+
+mulexpr: term STAR mulexpr
+       | term
+       ;
+
+lessexpr: term LESS lessexpr
+        | term
+        ;
+
+eqexpr: term EQUAL eqexpr
+      | term
+      ;
 
 //Term: ’(’ Expr ’)’
 //    | num
