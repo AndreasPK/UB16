@@ -34,7 +34,7 @@
 # define YY_YY_GRAMMAR_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -70,42 +70,18 @@ extern int yydebug;
     NUMBER = 280
   };
 #endif
-/* Tokens.  */
-#define END 258
-#define RETURN 259
-#define VAR 260
-#define DO 261
-#define CONTINUE 262
-#define BREAK 263
-#define OR 264
-#define NOT 265
-#define SEMIC 266
-#define BRACEL 267
-#define BRACER 268
-#define COMMA 269
-#define ASSIGN 270
-#define COLON 271
-#define ARROWR 272
-#define STAR 273
-#define PLUS 274
-#define LESS 275
-#define EQUAL 276
-#define MINUS 277
-#define CIRCUMFLEX 278
-#define ID 279
-#define NUMBER 280
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 8 "grammar.y" /* yacc.c:1909  */
+#line 13 "grammar.y" /* yacc.c:1909  */
 
   long number;
   char* name;
 
-#line 109 "grammar.h" /* yacc.c:1909  */
+#line 85 "grammar.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1

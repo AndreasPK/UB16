@@ -1,0 +1,928 @@
+Grammar
+
+    0 $accept: program $end
+
+    1 program: program funcdef SEMIC
+    2        | %empty
+
+    3 funcdef: id BRACEL parameterDef BRACER stats END
+
+    4 parameterDef: id COMMA parameterDef
+    5             | id
+    6             | %empty
+
+    7 stats: stat SEMIC stats
+    8      | %empty
+
+    9 stat: RETURN expr
+   10     | dostat
+   11     | VAR ID ASSIGN expr
+   12     | lexpr ASSIGN expr
+   13     | term
+
+   14 labeldef: id COLON
+   15         | %empty
+
+   16 dostat: labeldef DO guardedlist END
+
+   17 guardedlist: guarded SEMIC guardedlist
+   18            | %empty
+
+   19 guarded: expr ARROWR stats CONTINUE maybeid
+   20        | expr ARROWR stats BREAK maybeid
+
+   21 maybeid: id
+   22        | %empty
+
+   23 lexpr: id
+   24      | term CIRCUMFLEX
+
+   25 expr: NOT expr
+   26     | MINUS expr
+   27     | term
+   28     | term CIRCUMFLEX
+   29     | term PLUS term
+   30     | term STAR term
+   31     | term OR term
+   32     | term LESS term
+   33     | term EQUAL term
+
+   34 term: BRACEL expr BRACER
+   35     | num
+   36     | funcCall
+   37     | id
+
+   38 funcCall: id BRACEL arguments BRACER
+
+   39 arguments: expr
+   40          | expr COMMA arguments
+   41          | %empty
+
+   42 id: ID
+
+   43 num: NUMBER
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+END (258) 3 16
+RETURN (259) 9
+VAR (260) 11
+DO (261) 16
+CONTINUE (262) 19
+BREAK (263) 20
+OR (264) 31
+NOT (265) 25
+SEMIC (266) 1 7 17
+BRACEL (267) 3 34 38
+BRACER (268) 3 34 38
+COMMA (269) 4 40
+ASSIGN (270) 11 12
+COLON (271) 14
+ARROWR (272) 19 20
+STAR (273) 30
+PLUS (274) 29
+LESS (275) 32
+EQUAL (276) 33
+MINUS (277) 26
+CIRCUMFLEX (278) 24 28
+ID (279) 11 42
+NUMBER (280) 43
+
+
+Nonterminals, with rules where they appear
+
+$accept (26)
+    on left: 0
+program (27)
+    on left: 1 2, on right: 0 1
+funcdef (28)
+    on left: 3, on right: 1
+parameterDef (29)
+    on left: 4 5 6, on right: 3 4
+stats (30)
+    on left: 7 8, on right: 3 7 19 20
+stat (31)
+    on left: 9 10 11 12 13, on right: 7
+labeldef (32)
+    on left: 14 15, on right: 16
+dostat (33)
+    on left: 16, on right: 10
+guardedlist (34)
+    on left: 17 18, on right: 16 17
+guarded (35)
+    on left: 19 20, on right: 17
+maybeid (36)
+    on left: 21 22, on right: 19 20
+lexpr (37)
+    on left: 23 24, on right: 12
+expr (38)
+    on left: 25 26 27 28 29 30 31 32 33, on right: 9 11 12 19 20 25
+    26 34 39 40
+term (39)
+    on left: 34 35 36 37, on right: 13 24 27 28 29 30 31 32 33
+funcCall (40)
+    on left: 38, on right: 36
+arguments (41)
+    on left: 39 40 41, on right: 38 40
+id (42)
+    on left: 42, on right: 3 4 5 14 21 23 37 38
+num (43)
+    on left: 43, on right: 35
+
+
+State 0
+
+    0 $accept: . program $end
+
+    $default  reduce using rule 2 (program)
+
+    program  go to state 1
+
+
+State 1
+
+    0 $accept: program . $end
+    1 program: program . funcdef SEMIC
+
+    $end  shift, and go to state 2
+    ID    shift, and go to state 3
+
+    funcdef  go to state 4
+    id       go to state 5
+
+
+State 2
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 3
+
+   42 id: ID .
+
+    $default  reduce using rule 42 (id)
+
+
+State 4
+
+    1 program: program funcdef . SEMIC
+
+    SEMIC  shift, and go to state 6
+
+
+State 5
+
+    3 funcdef: id . BRACEL parameterDef BRACER stats END
+
+    BRACEL  shift, and go to state 7
+
+
+State 6
+
+    1 program: program funcdef SEMIC .
+
+    $default  reduce using rule 1 (program)
+
+
+State 7
+
+    3 funcdef: id BRACEL . parameterDef BRACER stats END
+
+    ID  shift, and go to state 3
+
+    $default  reduce using rule 6 (parameterDef)
+
+    parameterDef  go to state 8
+    id            go to state 9
+
+
+State 8
+
+    3 funcdef: id BRACEL parameterDef . BRACER stats END
+
+    BRACER  shift, and go to state 10
+
+
+State 9
+
+    4 parameterDef: id . COMMA parameterDef
+    5             | id .
+
+    COMMA  shift, and go to state 11
+
+    $default  reduce using rule 5 (parameterDef)
+
+
+State 10
+
+    3 funcdef: id BRACEL parameterDef BRACER . stats END
+
+    RETURN  shift, and go to state 12
+    VAR     shift, and go to state 13
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    DO        reduce using rule 15 (labeldef)
+    $default  reduce using rule 8 (stats)
+
+    stats     go to state 16
+    stat      go to state 17
+    labeldef  go to state 18
+    dostat    go to state 19
+    lexpr     go to state 20
+    term      go to state 21
+    funcCall  go to state 22
+    id        go to state 23
+    num       go to state 24
+
+
+State 11
+
+    4 parameterDef: id COMMA . parameterDef
+
+    ID  shift, and go to state 3
+
+    $default  reduce using rule 6 (parameterDef)
+
+    parameterDef  go to state 25
+    id            go to state 9
+
+
+State 12
+
+    9 stat: RETURN . expr
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 28
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 13
+
+   11 stat: VAR . ID ASSIGN expr
+
+    ID  shift, and go to state 31
+
+
+State 14
+
+   34 term: BRACEL . expr BRACER
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 32
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 15
+
+   43 num: NUMBER .
+
+    $default  reduce using rule 43 (num)
+
+
+State 16
+
+    3 funcdef: id BRACEL parameterDef BRACER stats . END
+
+    END  shift, and go to state 33
+
+
+State 17
+
+    7 stats: stat . SEMIC stats
+
+    SEMIC  shift, and go to state 34
+
+
+State 18
+
+   16 dostat: labeldef . DO guardedlist END
+
+    DO  shift, and go to state 35
+
+
+State 19
+
+   10 stat: dostat .
+
+    $default  reduce using rule 10 (stat)
+
+
+State 20
+
+   12 stat: lexpr . ASSIGN expr
+
+    ASSIGN  shift, and go to state 36
+
+
+State 21
+
+   13 stat: term .
+   24 lexpr: term . CIRCUMFLEX
+
+    CIRCUMFLEX  shift, and go to state 37
+
+    $default  reduce using rule 13 (stat)
+
+
+State 22
+
+   36 term: funcCall .
+
+    $default  reduce using rule 36 (term)
+
+
+State 23
+
+   14 labeldef: id . COLON
+   23 lexpr: id .
+   37 term: id .
+   38 funcCall: id . BRACEL arguments BRACER
+
+    BRACEL  shift, and go to state 38
+    COLON   shift, and go to state 39
+
+    ASSIGN    reduce using rule 23 (lexpr)
+    $default  reduce using rule 37 (term)
+
+
+State 24
+
+   35 term: num .
+
+    $default  reduce using rule 35 (term)
+
+
+State 25
+
+    4 parameterDef: id COMMA parameterDef .
+
+    $default  reduce using rule 4 (parameterDef)
+
+
+State 26
+
+   25 expr: NOT . expr
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 40
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 27
+
+   26 expr: MINUS . expr
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 41
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 28
+
+    9 stat: RETURN expr .
+
+    $default  reduce using rule 9 (stat)
+
+
+State 29
+
+   27 expr: term .
+   28     | term . CIRCUMFLEX
+   29     | term . PLUS term
+   30     | term . STAR term
+   31     | term . OR term
+   32     | term . LESS term
+   33     | term . EQUAL term
+
+    OR          shift, and go to state 42
+    STAR        shift, and go to state 43
+    PLUS        shift, and go to state 44
+    LESS        shift, and go to state 45
+    EQUAL       shift, and go to state 46
+    CIRCUMFLEX  shift, and go to state 47
+
+    $default  reduce using rule 27 (expr)
+
+
+State 30
+
+   37 term: id .
+   38 funcCall: id . BRACEL arguments BRACER
+
+    BRACEL  shift, and go to state 38
+
+    $default  reduce using rule 37 (term)
+
+
+State 31
+
+   11 stat: VAR ID . ASSIGN expr
+
+    ASSIGN  shift, and go to state 48
+
+
+State 32
+
+   34 term: BRACEL expr . BRACER
+
+    BRACER  shift, and go to state 49
+
+
+State 33
+
+    3 funcdef: id BRACEL parameterDef BRACER stats END .
+
+    $default  reduce using rule 3 (funcdef)
+
+
+State 34
+
+    7 stats: stat SEMIC . stats
+
+    RETURN  shift, and go to state 12
+    VAR     shift, and go to state 13
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    DO        reduce using rule 15 (labeldef)
+    $default  reduce using rule 8 (stats)
+
+    stats     go to state 50
+    stat      go to state 17
+    labeldef  go to state 18
+    dostat    go to state 19
+    lexpr     go to state 20
+    term      go to state 21
+    funcCall  go to state 22
+    id        go to state 23
+    num       go to state 24
+
+
+State 35
+
+   16 dostat: labeldef DO . guardedlist END
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    $default  reduce using rule 18 (guardedlist)
+
+    guardedlist  go to state 51
+    guarded      go to state 52
+    expr         go to state 53
+    term         go to state 29
+    funcCall     go to state 22
+    id           go to state 30
+    num          go to state 24
+
+
+State 36
+
+   12 stat: lexpr ASSIGN . expr
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 54
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 37
+
+   24 lexpr: term CIRCUMFLEX .
+
+    $default  reduce using rule 24 (lexpr)
+
+
+State 38
+
+   38 funcCall: id BRACEL . arguments BRACER
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    $default  reduce using rule 41 (arguments)
+
+    expr       go to state 55
+    term       go to state 29
+    funcCall   go to state 22
+    arguments  go to state 56
+    id         go to state 30
+    num        go to state 24
+
+
+State 39
+
+   14 labeldef: id COLON .
+
+    $default  reduce using rule 14 (labeldef)
+
+
+State 40
+
+   25 expr: NOT expr .
+
+    $default  reduce using rule 25 (expr)
+
+
+State 41
+
+   26 expr: MINUS expr .
+
+    $default  reduce using rule 26 (expr)
+
+
+State 42
+
+   31 expr: term OR . term
+
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    term      go to state 57
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 43
+
+   30 expr: term STAR . term
+
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    term      go to state 58
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 44
+
+   29 expr: term PLUS . term
+
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    term      go to state 59
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 45
+
+   32 expr: term LESS . term
+
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    term      go to state 60
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 46
+
+   33 expr: term EQUAL . term
+
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    term      go to state 61
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 47
+
+   28 expr: term CIRCUMFLEX .
+
+    $default  reduce using rule 28 (expr)
+
+
+State 48
+
+   11 stat: VAR ID ASSIGN . expr
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    expr      go to state 62
+    term      go to state 29
+    funcCall  go to state 22
+    id        go to state 30
+    num       go to state 24
+
+
+State 49
+
+   34 term: BRACEL expr BRACER .
+
+    $default  reduce using rule 34 (term)
+
+
+State 50
+
+    7 stats: stat SEMIC stats .
+
+    $default  reduce using rule 7 (stats)
+
+
+State 51
+
+   16 dostat: labeldef DO guardedlist . END
+
+    END  shift, and go to state 63
+
+
+State 52
+
+   17 guardedlist: guarded . SEMIC guardedlist
+
+    SEMIC  shift, and go to state 64
+
+
+State 53
+
+   19 guarded: expr . ARROWR stats CONTINUE maybeid
+   20        | expr . ARROWR stats BREAK maybeid
+
+    ARROWR  shift, and go to state 65
+
+
+State 54
+
+   12 stat: lexpr ASSIGN expr .
+
+    $default  reduce using rule 12 (stat)
+
+
+State 55
+
+   39 arguments: expr .
+   40          | expr . COMMA arguments
+
+    COMMA  shift, and go to state 66
+
+    $default  reduce using rule 39 (arguments)
+
+
+State 56
+
+   38 funcCall: id BRACEL arguments . BRACER
+
+    BRACER  shift, and go to state 67
+
+
+State 57
+
+   31 expr: term OR term .
+
+    $default  reduce using rule 31 (expr)
+
+
+State 58
+
+   30 expr: term STAR term .
+
+    $default  reduce using rule 30 (expr)
+
+
+State 59
+
+   29 expr: term PLUS term .
+
+    $default  reduce using rule 29 (expr)
+
+
+State 60
+
+   32 expr: term LESS term .
+
+    $default  reduce using rule 32 (expr)
+
+
+State 61
+
+   33 expr: term EQUAL term .
+
+    $default  reduce using rule 33 (expr)
+
+
+State 62
+
+   11 stat: VAR ID ASSIGN expr .
+
+    $default  reduce using rule 11 (stat)
+
+
+State 63
+
+   16 dostat: labeldef DO guardedlist END .
+
+    $default  reduce using rule 16 (dostat)
+
+
+State 64
+
+   17 guardedlist: guarded SEMIC . guardedlist
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    $default  reduce using rule 18 (guardedlist)
+
+    guardedlist  go to state 68
+    guarded      go to state 52
+    expr         go to state 53
+    term         go to state 29
+    funcCall     go to state 22
+    id           go to state 30
+    num          go to state 24
+
+
+State 65
+
+   19 guarded: expr ARROWR . stats CONTINUE maybeid
+   20        | expr ARROWR . stats BREAK maybeid
+
+    RETURN  shift, and go to state 12
+    VAR     shift, and go to state 13
+    BRACEL  shift, and go to state 14
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    DO        reduce using rule 15 (labeldef)
+    $default  reduce using rule 8 (stats)
+
+    stats     go to state 69
+    stat      go to state 17
+    labeldef  go to state 18
+    dostat    go to state 19
+    lexpr     go to state 20
+    term      go to state 21
+    funcCall  go to state 22
+    id        go to state 23
+    num       go to state 24
+
+
+State 66
+
+   40 arguments: expr COMMA . arguments
+
+    NOT     shift, and go to state 26
+    BRACEL  shift, and go to state 14
+    MINUS   shift, and go to state 27
+    ID      shift, and go to state 3
+    NUMBER  shift, and go to state 15
+
+    $default  reduce using rule 41 (arguments)
+
+    expr       go to state 55
+    term       go to state 29
+    funcCall   go to state 22
+    arguments  go to state 70
+    id         go to state 30
+    num        go to state 24
+
+
+State 67
+
+   38 funcCall: id BRACEL arguments BRACER .
+
+    $default  reduce using rule 38 (funcCall)
+
+
+State 68
+
+   17 guardedlist: guarded SEMIC guardedlist .
+
+    $default  reduce using rule 17 (guardedlist)
+
+
+State 69
+
+   19 guarded: expr ARROWR stats . CONTINUE maybeid
+   20        | expr ARROWR stats . BREAK maybeid
+
+    CONTINUE  shift, and go to state 71
+    BREAK     shift, and go to state 72
+
+
+State 70
+
+   40 arguments: expr COMMA arguments .
+
+    $default  reduce using rule 40 (arguments)
+
+
+State 71
+
+   19 guarded: expr ARROWR stats CONTINUE . maybeid
+
+    ID  shift, and go to state 3
+
+    $default  reduce using rule 22 (maybeid)
+
+    maybeid  go to state 73
+    id       go to state 74
+
+
+State 72
+
+   20 guarded: expr ARROWR stats BREAK . maybeid
+
+    ID  shift, and go to state 3
+
+    $default  reduce using rule 22 (maybeid)
+
+    maybeid  go to state 75
+    id       go to state 74
+
+
+State 73
+
+   19 guarded: expr ARROWR stats CONTINUE maybeid .
+
+    $default  reduce using rule 19 (guarded)
+
+
+State 74
+
+   21 maybeid: id .
+
+    $default  reduce using rule 21 (maybeid)
+
+
+State 75
+
+   20 guarded: expr ARROWR stats BREAK maybeid .
+
+    $default  reduce using rule 20 (guarded)
