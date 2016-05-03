@@ -7,13 +7,7 @@
   const char* someNumber = "someNumber";
 %}
 
-%define parse.trace
-
-%union
-{
-  long number;
-  char* name;
-}
+//%define parse.trace
 
 %token END
 %token RETURN
@@ -44,7 +38,6 @@
 %token NUMBER
 %token LEXER_ERROR
 
-%type <name> ID id stat stats funcdef program term expr
 
 %%
 
@@ -53,7 +46,7 @@
 //       ;
 //
 
-program: program funcdef SEMIC { msg("funcDef"); }
+program: program funcdef SEMIC
        |
        ;
 
@@ -61,7 +54,7 @@ program: program funcdef SEMIC { msg("funcDef"); }
 //       ;
 
 
-funcdef: id BRACEL parameterDef BRACER stats END { msg("funcDef"); };
+funcdef: id BRACEL parameterDef BRACER stats END ;
 
 //Pars: { id ’,’ } [ id ]     /* Parameterdefinition */
 //    ;
@@ -132,36 +125,17 @@ lexpr: id
 //    | Term ( ’<’ | ’=’ ) Term
 //    ;
 
-expr: NOT expr
-    | MINUS expr
+expr: NOT term
+    | MINUS term
     | term
     | term CIRCUMFLEX
-    | pexpr
-    | mulexpr
-    | orexpr
-    | lessexpr
-    | eqexpr
+    | term PLUS  term
+    | term OR    term
+    | term STAR  term
+    | term LESS  term
+    | term EQUAL term
     ; //TODO: Finish
 
-pexpr: term PLUS pexpr
-     | term
-     ;
-
-orexpr: term OR orexpr
-      | term
-      ;
-
-mulexpr: term STAR mulexpr
-       | term
-       ;
-
-lessexpr: term LESS lessexpr
-        | term
-        ;
-
-eqexpr: term EQUAL eqexpr
-      | term
-      ;
 
 //Term: ’(’ Expr ’)’
 //    | num
@@ -170,8 +144,8 @@ eqexpr: term EQUAL eqexpr
 //    ;
 
 
-term: BRACEL expr BRACER { $$ = $2; }
-    | num { $$ = (char*) someNumber; }
+term: BRACEL expr BRACER 
+    | num 
     | funcCall
     | id
     ;
@@ -183,7 +157,7 @@ arguments: expr
          |
          ;
 
-id: ID { printf("Found id: %s\n", $1); $$ = $1; };
+id: ID;
 
 num: NUMBER ;
 %%
