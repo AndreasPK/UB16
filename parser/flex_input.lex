@@ -49,9 +49,9 @@ not     return NOT; //echoLine(yytext);
 \-      return MINUS; //echoLine(yytext);
 \^      return CIRCUMFLEX; //echoLine(yytext);
 
-{identifier} yylval.name = strdup(yytext); return ID; //printf("id %s\n", yytext);
-{decNumber}     yylval.number = atol(yytext); return NUMBER; //printf("num %ld\n", atol(yytext));
-{octNumber}     yylval.number = strtol(yytext+2, NULL, 16); return NUMBER; 
+{identifier} return ID; //yylval.name = strdup(yytext); rintf("id %s\n", yytext);
+{decNumber}  return NUMBER; // yylval.number = atol(yytext); printf("num %ld\n", atol(yytext));
+{octNumber}  return NUMBER; // yylval.number = strtol(yytext+2, NULL, 16);
 
 [" "\t\n] ;
 {lineComment}   ;
