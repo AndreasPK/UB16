@@ -7,8 +7,6 @@
   const char* someNumber = "someNumber";
 %}
 
-//%define parse.trace
-
 %token END
 %token RETURN
 %token VAR
@@ -125,17 +123,31 @@ lexpr: id
 //    | Term ( ’<’ | ’=’ ) Term
 //    ;
 
-expr: NOT term
-    | MINUS term
-    | term
+expr: preexpr
     | term CIRCUMFLEX
-    | term PLUS  term
-    | term OR    term
-    | term STAR  term
-    | term LESS  term
+    | term PLUS plusexpr
+    | term STAR multexpr
+    | term OR orexpr
+    | term LESS term
     | term EQUAL term
     ; //TODO: Finish
 
+preexpr: NOT preexpr
+       | MINUS preexpr
+       | term
+       ;
+
+plusexpr: term PLUS plusexpr
+        | term
+        ;
+
+multexpr: term STAR multexpr
+        | term
+        ;
+
+orexpr: term OR orexpr
+        | term
+        ;
 
 //Term: ’(’ Expr ’)’
 //    | num
@@ -144,8 +156,8 @@ expr: NOT term
 //    ;
 
 
-term: BRACEL expr BRACER 
-    | num 
+term: BRACEL expr BRACER
+    | num
     | funcCall
     | id
     ;
@@ -164,7 +176,7 @@ num: NUMBER ;
 
 int main()
 {
-//  yydebug = 1;
+  yydebug = 1;
   int pres = yyparse();
   if(pres == 0) return 0;
   if(pres == 1) return 2;
