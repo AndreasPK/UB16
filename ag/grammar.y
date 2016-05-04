@@ -1,13 +1,12 @@
 %{
   #include <stdio.h>
   #include <string.h>
+  #include "functions.h"
   int yylex(void);
   void yyerror(char* s);
   void msg(char* s);
   const char* someNumber = "someNumber";
 %}
-
-//%define parse.trace
 
 %token END
 %token RETURN
@@ -38,6 +37,7 @@
 %token NUMBER
 %token LEXER_ERROR
 
+%start program
 
 %%
 
@@ -46,7 +46,7 @@
 //       ;
 //
 
-program: program funcdef SEMIC { msg("funcDef"); }
+program: ID BRACEL parameterDef BRACER stats END SEMIC program
        |
        ;
 
@@ -54,13 +54,11 @@ program: program funcdef SEMIC { msg("funcDef"); }
 //       ;
 
 
-funcdef: id BRACEL parameterDef BRACER stats END { msg("funcDef"); };
-
 //Pars: { id ’,’ } [ id ]     /* Parameterdefinition */
 //    ;
 
-parameterDef: id COMMA parameterDef
-            | id
+parameterDef: ID COMMA parameterDef
+            | ID
             |
             ;
 
@@ -87,11 +85,13 @@ stat: RETURN expr
 //DoStat: [ id ’:’ ] /* Labeldefinition */
 //        do { Guarded ’;’ } end
 //      ;
-labeldef: id COLON
-        |
-        ;
+//labeldef: ID COLON
+//        |
+//        ;
 
-dostat: labeldef DO guardedlist END ;
+dostat: ID COLON DO guardedlist END
+      |          DO guardedlist END
+      ;
 
 guardedlist: guarded SEMIC guardedlist ;
            |
@@ -105,7 +105,7 @@ guarded: expr ARROWR stats CONTINUE maybeid
        | expr ARROWR stats BREAK maybeid
        ;
 
-maybeid: id
+maybeid: ID
        |
        ;
 
@@ -113,7 +113,7 @@ maybeid: id
 //     | Term ’^’ /* schreibender Speicherzugriff */
 //     ;
 
-lexpr: id
+lexpr: ID
      | term CIRCUMFLEX
      ;
 
@@ -125,36 +125,31 @@ lexpr: id
 //    | Term ( ’<’ | ’=’ ) Term
 //    ;
 
-expr: NOT expr
-    | MINUS expr
-    | term
+expr: preexpr
     | term CIRCUMFLEX
-    | pexpr
-    | mulexpr
-    | orexpr
-    | lessexpr
-    | eqexpr
+    | term PLUS plusexpr
+    | term STAR multexpr
+    | term OR orexpr
+    | term LESS term
+    | term EQUAL term
     ; //TODO: Finish
 
-pexpr: term PLUS pexpr
-     | term
-     ;
-
-orexpr: term OR orexpr
-      | term
-      ;
-
-mulexpr: term STAR mulexpr
+preexpr: NOT preexpr
+       | MINUS preexpr
        | term
        ;
 
-lessexpr: term LESS lessexpr
+plusexpr: term PLUS plusexpr
         | term
         ;
 
-eqexpr: term EQUAL eqexpr
-      | term
-      ;
+multexpr: term STAR multexpr
+        | term
+        ;
+
+orexpr: term OR orexpr
+        | term
+        ;
 
 //Term: ’(’ Expr ’)’
 //    | num
@@ -163,27 +158,24 @@ eqexpr: term EQUAL eqexpr
 //    ;
 
 
-term: BRACEL expr BRACER 
-    | num 
+term: BRACEL expr BRACER
+    | NUMBER
     | funcCall
-    | id
+    | ID
     ;
 
-funcCall: id BRACEL arguments BRACER ;
+funcCall: ID BRACEL arguments BRACER ;
 
 arguments: expr
          | expr COMMA arguments
          |
          ;
 
-id: ID { printf("Found id:"); };
-
-num: NUMBER ;
 %%
 
 int main()
 {
-//  yydebug = 1;
+  yydebug = 1;
   int pres = yyparse();
   if(pres == 0) return 0;
   if(pres == 1) return 2;

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "grammar.h"
 #include <string.h>
+#include "attribute_types.h"
 void yyerror(char*);
 %}
 
@@ -49,9 +50,9 @@ not     return NOT; //echoLine(yytext);
 \-      return MINUS; //echoLine(yytext);
 \^      return CIRCUMFLEX; //echoLine(yytext);
 
-{identifier} /*yylval.name = strdup(yytext);*/ return ID; //printf("id %s\n", yytext);
+{identifier} return ID; @{ @ID.name@ = strdup(yytext); @}
 {decNumber}     /*yylval.number = atol(yytext);*/ return NUMBER; //printf("num %ld\n", atol(yytext));
-{octNumber}     /*yylval.number = strtol(yytext+2, NULL, 16);*/ return NUMBER; 
+{octNumber}     /*yylval.number = strtol(yytext+2, NULL, 16);*/ return NUMBER;
 
 [" "\t\n] ;
 {lineComment}   ;
