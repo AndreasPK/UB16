@@ -46,7 +46,7 @@
 //       ;
 //
 
-program: ID BRACEL parameterDef BRACER stats END SEMIC program
+program: program ID BRACEL parameterDef BRACER stats END SEMIC
        |
        ;
 

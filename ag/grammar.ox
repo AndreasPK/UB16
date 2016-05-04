@@ -20,36 +20,28 @@
 
 
 %%
-multexpr : term STAR multexpr
-         | term
-         ;
-guardedlist : guarded SEMIC guardedlist
-            | 
-            ;
+parameterDef : ID COMMA parameterDef
+             | ID
+             | 
+             ;
+preexpr : NOT preexpr
+        | MINUS preexpr
+        | term
+        ;
+maybeid : ID
+        | 
+        ;
+dostat : ID COLON DO guardedlist END
+       | DO guardedlist END
+       ;
 term : BRACEL expr BRACER
      | NUMBER
      | funcCall
      | ID
      ;
-preexpr : NOT preexpr
-        | MINUS preexpr
-        | term
-        ;
-funcCall : ID BRACEL arguments BRACER
-         ;
 plusexpr : term PLUS plusexpr
          | term
          ;
-maybeid : ID
-        | 
-        ;
-parameterDef : ID COMMA parameterDef
-             | ID
-             | 
-             ;
-lexpr : ID
-      | term CIRCUMFLEX
-      ;
 expr : preexpr
      | term CIRCUMFLEX
      | term PLUS plusexpr
@@ -58,30 +50,38 @@ expr : preexpr
      | term LESS term
      | term EQUAL term
      ;
+funcCall : ID BRACEL arguments BRACER
+         ;
+orexpr : term OR orexpr
+       | term
+       ;
+stats : stat SEMIC stats
+      | 
+      ;
+multexpr : term STAR multexpr
+         | term
+         ;
+guardedlist : guarded SEMIC guardedlist
+            | 
+            ;
 arguments : expr
           | expr COMMA arguments
           | 
           ;
+guarded : expr ARROWR stats CONTINUE maybeid
+        | expr ARROWR stats BREAK maybeid
+        ;
 stat : RETURN expr
      | dostat
      | VAR ID ASSIGN expr
      | lexpr ASSIGN expr
      | term
      ;
-dostat : ID COLON DO guardedlist END
-       | guardedlist END
-       ;
+lexpr : ID
+      | term CIRCUMFLEX
+      ;
 program : ID BRACEL parameterDef BRACER stats END SEMIC program
         | 
-        ;
-stats : stat SEMIC stats
-      | 
-      ;
-orexpr : term OR orexpr
-       | term
-       ;
-guarded : expr ARROWR stats CONTINUE maybeid
-        | expr ARROWR stats BREAK maybeid
         ;
 
 %%
