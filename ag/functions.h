@@ -19,7 +19,10 @@ typedef struct symT
 symT *sym_add(symT* table, char* name, int type);
 symT* sym_find(symT *table, char* name, int type);
 symT* sym_combine(symT *table, symT* t2);
+int sym_use(symT *table, char* name, int type);
+int sym_def(symT *table, char* name, int type);
 void sym_list(symT* head);
+
 
 
 

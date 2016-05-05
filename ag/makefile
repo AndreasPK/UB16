@@ -1,6 +1,7 @@
 AS_OPTS = -c
 C_OPTS= -std=gnu99 -g
-DEBUG_PARSER = 
+DEBUG_PARSER = --debug
+
 all: parser
 
 lexer.c: oxout.l
@@ -33,7 +34,7 @@ test: parser
 	./$< < testFile
 
 clean:
-	rm *.o grammar.h grammar.c
+	rm *.o grammar.h grammar.c lexer.c
 	rm parser
 	rm grammar.output
 	rm oxout*
