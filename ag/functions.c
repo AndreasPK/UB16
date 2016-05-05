@@ -71,7 +71,7 @@ symT* sym_find(symT *table, char* name, int type)
 {
   if(table == NULL)
   {
-    printf("Error, tried to search empty table for %s?!?\n", name);
+    printf("Caution, tried to search empty table for %s.\n", name);
     return NULL;
   }
     if (strcmp(name, table->name) == 0)
@@ -183,8 +183,7 @@ int sym_def(symT *table, char* name, int type)
 {
   if(table == NULL)
   {
-    printf("Error: No symbols defined.\n");
-    return -1;
+    printf("Caution: No symbols defined.\n");
   }
 
   if(sym_find(table, name, ST_ANY) != NULL)
