@@ -1,2 +1,3 @@
-test () end;
+test (arg1, arg2) end;
 
+test (otherStuff, moreStuff) end;

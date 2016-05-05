@@ -517,8 +517,68 @@ void echoLine(char* s) { printf("%s\n", s); }
 #line 31 "oxout.l"
 
 
-struct yyyT1 { T_NAME name; }; 
+struct yyyT1 { T_SIN sin; }; 
 typedef struct yyyT1 *yyyP1; 
+
+
+struct yyyT2 { T_SOUT sout; }; 
+typedef struct yyyT2 *yyyP2; 
+
+
+struct yyyT3 { T_SIN sin; T_SOUT sout; }; 
+typedef struct yyyT3 *yyyP3; 
+
+
+struct yyyT4 { T_SIN sin; }; 
+typedef struct yyyT4 *yyyP4; 
+
+
+struct yyyT5 { T_SIN sin; }; 
+typedef struct yyyT5 *yyyP5; 
+
+
+struct yyyT6 { T_NAME name; }; 
+typedef struct yyyT6 *yyyP6; 
+
+
+struct yyyT7 { T_SIN sin; }; 
+typedef struct yyyT7 *yyyP7; 
+
+
+struct yyyT8 { T_SIN sin; T_SOUT sout; }; 
+typedef struct yyyT8 *yyyP8; 
+
+
+struct yyyT9 { T_SIN sin; }; 
+typedef struct yyyT9 *yyyP9; 
+
+
+struct yyyT10 { T_SIN sin; }; 
+typedef struct yyyT10 *yyyP10; 
+
+
+struct yyyT11 { T_SIN sin; }; 
+typedef struct yyyT11 *yyyP11; 
+
+
+struct yyyT12 { T_SIN sin; }; 
+typedef struct yyyT12 *yyyP12; 
+
+
+struct yyyT13 { T_SIN sin; }; 
+typedef struct yyyT13 *yyyP13; 
+
+
+struct yyyT14 { T_SIN sin; }; 
+typedef struct yyyT14 *yyyP14; 
+
+
+struct yyyT15 { T_SIN sin; }; 
+typedef struct yyyT15 *yyyP15; 
+
+
+struct yyyT16 { T_SIN sin; }; 
+typedef struct yyyT16 *yyyP16; 
                                                       /*custom*/  
 typedef unsigned char yyyWAT; 
 typedef unsigned char yyyRCT; 
@@ -562,7 +622,7 @@ extern yyyWAT yyyLRCIL[];
 extern void yyyGenLeaf(); 
 
 
-#line 566 "lexer.c"
+#line 626 "lexer.c"
 
 #define INITIAL 0
 
@@ -749,10 +809,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 79 "oxout.l"
+#line 139 "oxout.l"
 
 
-#line 756 "lexer.c"
+#line 816 "lexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -837,146 +897,146 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 81 "oxout.l"
+#line 141 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return END;} 
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 82 "oxout.l"
+#line 142 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return RETURN;} 
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 83 "oxout.l"
+#line 143 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return VAR;} 
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 84 "oxout.l"
+#line 144 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return DO;} 
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 85 "oxout.l"
+#line 145 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return CONTINUE;} 
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 86 "oxout.l"
+#line 146 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return BREAK;} 
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 87 "oxout.l"
+#line 147 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return OR;} 
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 88 "oxout.l"
+#line 148 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return NOT;} 
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 90 "oxout.l"
+#line 150 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return SEMIC;} 
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 91 "oxout.l"
+#line 151 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return BRACEL;} 
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 92 "oxout.l"
+#line 152 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return BRACER;} 
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 93 "oxout.l"
+#line 153 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return COMMA;} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 94 "oxout.l"
+#line 154 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return ASSIGN;} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 95 "oxout.l"
+#line 155 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return COLON;} 
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 96 "oxout.l"
+#line 156 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return ARROWR;} 
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 97 "oxout.l"
+#line 157 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return STAR;} 
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 98 "oxout.l"
+#line 158 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return PLUS;} 
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 99 "oxout.l"
+#line 159 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return LESS;} 
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 100 "oxout.l"
+#line 160 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return EQUAL;} 
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 101 "oxout.l"
+#line 161 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return MINUS;} 
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 102 "oxout.l"
+#line 162 "oxout.l"
 {yyyGenLeaf(0,0,yyyLRCIL+0,yyyLRCIL+0);return CIRCUMFLEX;} 
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 104 "oxout.l"
-{yyyGenLeaf(1,1,yyyLRCIL+0,yyyLRCIL+1); (((yyyP1)(yyyTermBuffer.snBufPtr))->name) = strdup(yytext); return ID;} 
+#line 164 "oxout.l"
+{yyyGenLeaf(1,6,yyyLRCIL+0,yyyLRCIL+1); (((yyyP6)(yyyTermBuffer.snBufPtr))->name) = strdup(yytext); return ID;} 
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 105 "oxout.l"
+#line 165 "oxout.l"
 /*yylval.number = atol(yytext);*/ {yyyGenLeaf(0,0,yyyLRCIL+1,yyyLRCIL+1);return NUMBER;} 
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 106 "oxout.l"
+#line 166 "oxout.l"
 /*yylval.number = strtol(yytext+2, NULL, 16);*/ {yyyGenLeaf(0,0,yyyLRCIL+1,yyyLRCIL+1);return NUMBER;}
 	YY_BREAK
 case 25:
 /* rule 25 can match eol */
 YY_RULE_SETUP
-#line 108 "oxout.l"
+#line 168 "oxout.l"
 ;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 109 "oxout.l"
+#line 169 "oxout.l"
 ;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 110 "oxout.l"
+#line 170 "oxout.l"
 fprintf(stderr, "Lexer Error: Found unexpected character %c\n", *yytext);exit(1);
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 113 "oxout.l"
+#line 173 "oxout.l"
 ECHO;
 	YY_BREAK
-#line 980 "lexer.c"
+#line 1040 "lexer.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1974,7 +2034,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 113 "oxout.l"
+#line 173 "oxout.l"
 
 
 

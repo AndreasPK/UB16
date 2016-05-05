@@ -1,6 +1,6 @@
 #include "functions.h"
 
-symT *sym_add(symT *table, char* name)
+symT *sym_add(symT *table, char* name, int type)
 {
     if (name == NULL || strlen(name) == 0)
     {
@@ -13,6 +13,7 @@ symT *sym_add(symT *table, char* name)
         symT* n = (symT*)malloc(sizeof(struct symT));
         n->next = NULL;
         n->name = name;
+        n->type = type;
         return n;
     }
 
@@ -34,20 +35,28 @@ symT *sym_add(symT *table, char* name)
                 index->next = n;
                 n->next = NULL;
                 n->name = name;
+                n->type = type;
                 return table;
             }
         }
     }
 }
 
-symT* sym_find(symT *table, char* name)
+//Finds the given symbol of type x and returns the entry, if ST_ANY finds any matching name
+symT* sym_find(symT *table, char* name, int type)
 {
-    if (strcmp(name, table->name) == 0)
+    if (strcmp(name, table->name) == ST_ANY)
+    {
+      if(type == ST_ANY)
         return table;
+      else
+        if(table->type == type)
+          return table;
+    }
     else if (table->next == NULL)
         return NULL;
     else
-        return sym_find(table->next, name);
+        return sym_find(table->next, name, type);
 }
 
 symT* sym_combine(symT* t1, symT* t2)
@@ -58,6 +67,7 @@ symT* sym_combine(symT* t1, symT* t2)
     while (t1 != NULL)
     {
         head->name = t1->name;
+        head->type = t1->type;
         t1 = t1->next;
         if (t1 == NULL && t2 == NULL)
         {
@@ -72,6 +82,7 @@ symT* sym_combine(symT* t1, symT* t2)
     while (1)
     {
         head->name = t2->name;
+        head->type = t2->type;
         if (t2->next == NULL)
         {
             head->next = NULL;
@@ -91,6 +102,13 @@ void sym_list(symT *head)
 {
   while(head != NULL)
   {
-    printf("Name: %s\n", head->name);
+    char *type;
+    if(head->type = ST_LABEL)
+      type = "label";
+    else if(head->type = ST_VAR)
+      type = "variable";
+
+    printf("%s: %s\n", type, head->name);
+    head = head->next;
   }
 }

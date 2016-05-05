@@ -1,13 +1,13 @@
 AS_OPTS = -c
 C_OPTS= -std=gnu99 -g
-
+DEBUG_PARSER = 
 all: parser
 
 lexer.c: oxout.l
 	flex -o $@ $<
 
 grammar.h grammar.c: oxout.y
-	bison --debug -v -o grammar.c -d $<
+	bison $(DEBUG_PARSER) -v -o grammar.c -d $<
 
 functions.o: functions.c
 	gcc $(C_OPTS) -c $< -o $@
