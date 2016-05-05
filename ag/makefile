@@ -2,7 +2,7 @@ AS_OPTS = -c
 C_OPTS= -std=gnu99 -g
 DEBUG_PARSER = --debug
 
-all: parser
+all: ag
 
 lexer.c: oxout.l
 	flex -o $@ $<
@@ -20,7 +20,7 @@ lexer.o: lexer.c grammar.h
 	gcc $(C_OPTS) -c $<
 
 
-parser: functions.o parser.o lexer.o
+ag: functions.o parser.o lexer.o
 	gcc $(C_OPTS) $^ -o $@
 
 grammar.ox: grammar.y
@@ -30,11 +30,11 @@ ox oxout.l oxout.y: grammar.ox
 	ox grammar.ox flex_input.lex
 
 
-test: parser
+test: ag
 	./$< < testFile
 
 clean:
 	rm *.o grammar.h grammar.c lexer.c
-	rm parser
+	rm ag
 	rm grammar.output
 	rm oxout*
