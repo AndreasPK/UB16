@@ -63,6 +63,15 @@ program : program ID BRACEL parameterDef BRACER stats END SEMIC
         | 
         ;
 lexpr : ID
+        @{
+            @varUse {
+               if(sym_use(@lexpr.sin@,@ID.name@,ST_VAR) != 0)
+               {
+               	printf("Error, variable %s not defined but assigned!\n", @ID.name@);
+               	exit(3);
+               }
+            }
+        @}
       | term CIRCUMFLEX
         @{
             @i @term.sin@ = @lexpr.sin@;
