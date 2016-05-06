@@ -24,6 +24,5 @@ int sym_def(symT *table, char* name, int type);
 void sym_list(symT* head);
 
 
-
-
 #endif
+

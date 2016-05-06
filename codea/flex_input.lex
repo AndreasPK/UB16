@@ -51,8 +51,8 @@ not     return NOT; //echoLine(yytext);
 \^      return CIRCUMFLEX; //echoLine(yytext);
 
 {identifier} return ID; @{ @ID.name@ = strdup(yytext); @}
-{decNumber}     /*yylval.number = atol(yytext);*/ return NUMBER; //printf("num %ld\n", atol(yytext));
-{octNumber}     /*yylval.number = strtol(yytext+2, NULL, 16);*/ return NUMBER;
+{decNumber}  return NUMBER; @{ @NUMBER.value@ = atol(yytext); @} //printf("num %ld\n", atol(yytext));
+{octNumber}  return NUMBER; @{ @NUMBER.value@ = strtol(yytext+2, NULL, 16); @}
 
 [" "\t\n] ;
 {lineComment}   ;

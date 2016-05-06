@@ -1,8 +1,9 @@
 AS_OPTS = -c
-C_OPTS= -std=gnu99 -g
+C_OPTS= -std=gnu99 -g -DUSE_IBURG -DBURM
 DEBUG_PARSER = --debug
+NAME = codea
 
-all: ag
+all: $(NAME)
 
 lexer.c: oxout.l
 	flex -o $@ $<
@@ -19,8 +20,16 @@ parser.o: grammar.c
 lexer.o: lexer.c grammar.h
 	gcc $(C_OPTS) -c $<
 
+burg.c: burg.bfe
+	bfe < $< | iburg > $@
 
-ag: functions.o parser.o lexer.o
+burg.o: burg.c
+	gcc -c $(C_OPTS) $< -o $@
+
+tree.o: tree.c
+	gcc $(C_OPTS) -c $< -o $@
+
+$(NAME): functions.o parser.o lexer.o tree.o burg.o
 	gcc $(C_OPTS) $^ -o $@
 
 grammar.ox: grammar.y
@@ -30,11 +39,11 @@ ox oxout.l oxout.y: grammar.ox
 	ox grammar.ox flex_input.lex
 
 
-test: ag
+test: $(NAME)
 	./$< < testFile
 
 clean:
-	rm *.o grammar.h grammar.c lexer.c
-	rm ag
+	rm *.o grammar.h grammar.c lexer.c burg.c
+	rm $(NAME)
 	rm grammar.output
 	rm oxout*

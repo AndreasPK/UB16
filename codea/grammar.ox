@@ -21,6 +21,7 @@
 @attributes { T_SIN sin; T_SOUT sout; } stats
 @attributes { T_SIN sin; } expr
 @attributes { T_SIN sin; } dostat
+@attributes { T_VALUE value; } NUMBER
 @attributes { T_NAME name; } ID
 @attributes { T_SIN sin; } plusexpr
 @attributes { T_SIN sin; T_SOUT sout; } stat
@@ -34,34 +35,79 @@
 @attributes { T_SIN sin; } guarded
 @attributes { T_SIN sin; } funcCall
 
+@traversal codegen
 @traversal labelUse
-@traversal listSymbols
 @traversal varDef
 @traversal varUse
 
 %%
-maybeid : ID
+stats : stat SEMIC stats
+        @{
+            @i @stats.0.sout@ = @stat.sout@;
+            @i @stats.1.sin@ = @stats.0.sout@;
+            @i @stat.sin@ = @stats.0.sin@;
+        @}
+      | 
+        @{
+            @i @stats.sout@ = @stats.sin@;
+        @}
+      ;
+parameterDef : ID COMMA parameterDef
+               @{
+                   @i @parameterDef.0.sout@ = sym_add(@parameterDef.1.sout@, @ID.name@, ST_VAR);;
+                   @varDef {
+                      printf("%s\n", @ID.name@);
+                      if(sym_find(@parameterDef.1.sout@, @ID.name@, ST_ANY) != NULL)
+                      {
+                      	printf("Error, Parameter defined twice!\n");
+                      	exit(3);
+                      }
+                   }
+               @}
+             | ID
+               @{
+                   @i @parameterDef.sout@ = sym_add(NULL, @ID.name@, ST_VAR);;
+               @}
+             | 
+               @{
+                   @i @parameterDef.sout@ = NULL;
+               @}
+             ;
+guardedlist : guarded SEMIC guardedlist
+              @{
+                  @i @guarded.sin@ = @guardedlist.0.sin@;
+                  @i @guardedlist.1.sin@ = @guardedlist.0.sin@;
+              @}
+            | 
+            ;
+funcCall : ID BRACEL arguments BRACER
+           @{
+               @i @arguments.sin@ = @funcCall.sin@;
+           @}
+         ;
+preexpr : NOT preexpr
           @{
-              @labelUse {
-                 if(sym_use(@maybeid.sin@, @ID.name@, ST_LABEL) != 0)
-                 {
-                 	printf("Label check failed for %s.\n", @ID.name@);
-                 	sym_list(@maybeid.sin@);
-                 	exit(3);
-                 }
-              }
+              @i @preexpr.1.sin@ = @preexpr.0.sin@;
           @}
-        | 
-        ;
-program : program ID BRACEL parameterDef BRACER stats END SEMIC
+        | MINUS preexpr
           @{
-              @i @stats.sin@ = @parameterDef.sout@;
-              @listSymbols {
-                 sym_list(@parameterDef.sout@);
-              }
+              @i @preexpr.1.sin@ = @preexpr.0.sin@;
           @}
-        | 
+        | term
+          @{
+              @i @term.sin@ = @preexpr.sin@;
+          @}
         ;
+orexpr : term OR orexpr
+         @{
+             @i @orexpr.1.sin@ = @orexpr.0.sin@;
+             @i @term.sin@ = @orexpr.0.sin@;
+         @}
+       | term
+         @{
+             @i @term.sin@ = @orexpr.sin@;
+         @}
+       ;
 lexpr : ID
         @{
             @varUse {
@@ -77,65 +123,16 @@ lexpr : ID
             @i @term.sin@ = @lexpr.sin@;
         @}
       ;
-stat : RETURN expr
-       @{
-           @i @stat.sout@ = @stat.sin@;
-           @i @expr.sin@ = @stat.sin@;
-       @}
-     | dostat
-       @{
-           @i @dostat.sin@ = @stat.sin@;
-           @i @stat.sout@ = @stat.sin@;
-       @}
-     | VAR ID ASSIGN expr
-       @{
-           @i   @stat.sout@ = sym_add(@stat.sin@, @ID.name@, ST_VAR);
-;
-           @varDef {
-              if(sym_def(@stat.sin@, @ID.name@, ST_VAR) != 0)
-              {
-                printf("Error, can't define variable %s.\n", @ID.name@);
-                exit(3);
-              }
-           }
-           @i @expr.sin@ = @stat.sin@;
-       @}
-     | lexpr ASSIGN expr
-       @{
-           @i @lexpr.sin@ = @stat.sin@;
-           @i @expr.sin@ = @stat.sin@;
-           @i @stat.sout@ = @stat.sin@;
-       @}
-     | term
-       @{
-           @i @term.sin@ = @stat.sin@;
-           @i @stat.sout@ = @stat.sin@;
-       @}
-     ;
-stats : stat SEMIC stats
-        @{
-            @i @stats.0.sout@ = @stat.sout@;
-            @i @stat.sin@ = @stats.0.sin@;
-            @i @stats.1.sin@ = @stats.0.sout@;
-        @}
-      | 
-        @{
-            @i @stats.sout@ = @stats.sin@;
-        @}
-      ;
-preexpr : NOT preexpr
-          @{
-              @i @preexpr.1.sin@ = @preexpr.0.sin@;
-          @}
-        | MINUS preexpr
-          @{
-              @i @preexpr.1.sin@ = @preexpr.0.sin@;
-          @}
-        | term
-          @{
-              @i @term.sin@ = @preexpr.sin@;
-          @}
-        ;
+multexpr : term STAR multexpr
+           @{
+               @i @multexpr.1.sin@ = @multexpr.0.sin@;
+               @i @term.sin@ = @multexpr.0.sin@;
+           @}
+         | term
+           @{
+               @i @term.sin@ = @multexpr.sin@;
+           @}
+         ;
 term : BRACEL expr BRACER
        @{
            @i @expr.sin@ = @term.sin@;
@@ -158,51 +155,32 @@ term : BRACEL expr BRACER
            }
        @}
      ;
-parameterDef : ID COMMA parameterDef
-               @{
-                   @i @parameterDef.0.sout@ = sym_add(@parameterDef.1.sout@, @ID.name@, ST_VAR);;
-                   @varDef {
-                      printf("%s\n", @ID.name@);
-                      if(sym_find(@parameterDef.1.sout@, @ID.name@, ST_ANY) != NULL)
-                      {
-                      	printf("Error, Parameter defined twice!\n");
-                      	exit(3);
-                      }
-                   }
-               @}
-             | ID
-               @{
-                   @i @parameterDef.sout@ = sym_add(NULL, @ID.name@, ST_VAR);;
-               @}
-             | 
-               @{
-                   @i @parameterDef.sout@ = NULL;;
-               @}
-             ;
-guarded : expr ARROWR stats CONTINUE maybeid
+program : program ID BRACEL parameterDef BRACER stats END SEMIC
           @{
-              @i @maybeid.sin@ = @guarded.sin@;
-              @i @stats.sin@ = @guarded.sin@;
-              @i @expr.sin@ = @guarded.sin@;
+              @codegen {
+                 invoke_burm(newNode(OP_NOOP), 1);
+                 printf("%s \"generated\".\n", @ID.name@);
+              }
+              @i @stats.sin@ = @parameterDef.sout@;
           @}
-        | expr ARROWR stats BREAK maybeid
-          @{
-              @i @stats.sin@ = @guarded.sin@;
-              @i @expr.sin@ = @guarded.sin@;
-              @i @maybeid.sin@ = @guarded.sin@;
-          @}
+        | 
         ;
-arguments : expr
-            @{
-                @i @expr.sin@ = @arguments.sin@;
-            @}
-          | expr COMMA arguments
-            @{
-                @i @expr.sin@ = @arguments.0.sin@;
-                @i @arguments.1.sin@ = @arguments.0.sin@;
-            @}
-          | 
-          ;
+dostat : ID COLON DO guardedlist END
+         @{
+             @i @guardedlist.sin@ = sym_add(@dostat.sin@, @ID.name@, ST_LABEL);;
+             @varDef {
+                if(sym_def(@dostat.sin@, @ID.name@, ST_LABEL) != 0)
+                {
+                  printf("Error defining label %s.\n", @ID.name@);
+                  exit(3);
+                }
+             }
+         @}
+       | DO guardedlist END
+         @{
+             @i @guardedlist.sin@ = @dostat.sin@;
+         @}
+       ;
 plusexpr : term PLUS plusexpr
            @{
                @i @term.sin@ = @plusexpr.0.sin@;
@@ -213,50 +191,6 @@ plusexpr : term PLUS plusexpr
                @i @term.sin@ = @plusexpr.sin@;
            @}
          ;
-funcCall : ID BRACEL arguments BRACER
-           @{
-               @i @arguments.sin@ = @funcCall.sin@;
-           @}
-         ;
-multexpr : term STAR multexpr
-           @{
-               @i @multexpr.1.sin@ = @multexpr.0.sin@;
-               @i @term.sin@ = @multexpr.0.sin@;
-           @}
-         | term
-           @{
-               @i @term.sin@ = @multexpr.sin@;
-           @}
-         ;
-dostat : ID COLON DO guardedlist END
-         @{
-             @i @guardedlist.sin@ = sym_add(@dostat.sin@, @ID.name@, ST_LABEL);;
-         @}
-       | DO guardedlist END
-         @{
-             @i @guardedlist.sin@ = @dostat.sin@;
-         @}
-       ;
-guardedlist : guarded SEMIC guardedlist
-              @{
-                  @i @guardedlist.1.sin@ = @guardedlist.0.sin@;
-                  @i @guarded.sin@ = @guardedlist.0.sin@;
-                  @listSymbols {
-                     sym_list(@guardedlist.0.sin@);
-                  }
-              @}
-            | 
-            ;
-orexpr : term OR orexpr
-         @{
-             @i @term.sin@ = @orexpr.0.sin@;
-             @i @orexpr.1.sin@ = @orexpr.0.sin@;
-         @}
-       | term
-         @{
-             @i @term.sin@ = @orexpr.sin@;
-         @}
-       ;
 expr : preexpr
        @{
            @i @preexpr.sin@ = @expr.sin@;
@@ -282,13 +216,85 @@ expr : preexpr
        @}
      | term LESS term
        @{
-           @i @term.0.sin@ = @expr.sin@;
            @i @term.1.sin@ = @expr.sin@;
+           @i @term.0.sin@ = @expr.sin@;
        @}
      | term EQUAL term
        @{
            @i @term.1.sin@ = @expr.sin@;
            @i @term.0.sin@ = @expr.sin@;
+       @}
+     ;
+maybeid : ID
+          @{
+              @labelUse {
+                 if(sym_use(@maybeid.sin@, @ID.name@, ST_LABEL) != 0)
+                 {
+                 	printf("Label check failed for %s.\n", @ID.name@);
+                 	sym_list(@maybeid.sin@);
+                 	exit(3);
+                 }
+              }
+          @}
+        | 
+        ;
+arguments : expr
+            @{
+                @i @expr.sin@ = @arguments.sin@;
+            @}
+          | expr COMMA arguments
+            @{
+                @i @expr.sin@ = @arguments.0.sin@;
+                @i @arguments.1.sin@ = @arguments.0.sin@;
+            @}
+          | 
+          ;
+guarded : expr ARROWR stats CONTINUE maybeid
+          @{
+              @i @maybeid.sin@ = @guarded.sin@;
+              @i @expr.sin@ = @guarded.sin@;
+              @i @stats.sin@ = @guarded.sin@;
+          @}
+        | expr ARROWR stats BREAK maybeid
+          @{
+              @i @maybeid.sin@ = @guarded.sin@;
+              @i @stats.sin@ = @guarded.sin@;
+              @i @expr.sin@ = @guarded.sin@;
+          @}
+        ;
+stat : RETURN expr
+       @{
+           @i @stat.sout@ = @stat.sin@;
+           @i @expr.sin@ = @stat.sin@;
+       @}
+     | dostat
+       @{
+           @i @dostat.sin@ = @stat.sin@;
+           @i @stat.sout@ = @stat.sin@;
+       @}
+     | VAR ID ASSIGN expr
+       @{
+           @i   @stat.sout@ = sym_add(@stat.sin@, @ID.name@, ST_VAR);
+;
+           @varDef {
+              if(sym_def(@stat.sin@, @ID.name@, ST_VAR) != 0)
+              {
+                printf("Error, can't define variable %s.\n", @ID.name@);
+                exit(3);
+              }
+           }
+           @i @expr.sin@ = @stat.sin@;
+       @}
+     | lexpr ASSIGN expr
+       @{
+           @i @expr.sin@ = @stat.sin@;
+           @i @lexpr.sin@ = @stat.sin@;
+           @i @stat.sout@ = @stat.sin@;
+       @}
+     | term
+       @{
+           @i @stat.sout@ = @stat.sin@;
+           @i @term.sin@ = @stat.sin@;
        @}
      ;
 
