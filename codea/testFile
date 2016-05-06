@@ -1,0 +1,6 @@
+test (arg1, arg2) end;
+
+test (otherStuff, moreStuff) 
+  return moreStuff
+  return faulty
+end;
