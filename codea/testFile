@@ -1,15 +1,7 @@
 // This test file checks a simple program (faculty of n).
 
-fac(n)
-	var _n := 1;
-	do
-		2 < n -> _n := n * fac(n+(-1));
-		         break;
-	end;
-	return _n;
+someFunction(para, parb)
+	return 2+1;
+  return para + parb;
 end;
 
-main()
-	var fac_5 := fac(0x05); // this is 120.
-	return 0;
-end;

@@ -1,7 +1,7 @@
 AS_OPTS = -c
 C_OPTS= -std=gnu99 -g -DUSE_IBURG -DBURM
 DEBUG_PARSER = --debug
-NAME = asta
+NAME = codea
 
 all: $(NAME)
 

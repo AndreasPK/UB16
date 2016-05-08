@@ -9,7 +9,7 @@
 
 typedef struct burm_state *STATEPTR_TYPE;
 
-extern const char* registerNames[];
+extern const char* regNames[];
 
 //Symbol handling.
 enum { ST_ANY = 0, ST_LABEL, ST_VAR };
@@ -28,7 +28,7 @@ typedef psymList psym;
 
 //AST Node types
 enum {
-  ARG, //Defines an argument (by name).
+  ARG = 1, //Defines an argument (by name).
   FUNCTION, //Defines an Function
   NOOP,
   RETURNSTAT,
@@ -54,6 +54,8 @@ enum {
   GUARDED,
   FCALL,
   ARGEXPR,
+  LASTARG,
+  EXPR,
 };
 
 ///AST-Node
@@ -71,6 +73,7 @@ typedef struct tNode
     const char* name;
     long int value;
   };
+  int reg; //Register for immediate value.
 
 }* nodeptr;
 
@@ -92,6 +95,12 @@ psymList symFind(const psymList head, const char* name);
 nodeptr updateAstSymbols(nodeptr tree);
 //BURM definitions
 
+extern int registers[];
+
+int newReg(void);
+int freeReg(int id);
+void clearReg();
+
 #define NODEPTR_TYPE   nodeptr
 #define OP_LABEL(p)    ((p)->op)
 #define LEFT_CHILD(p)  ((p)->children[0])
@@ -99,6 +108,7 @@ nodeptr updateAstSymbols(nodeptr tree);
 #define STATE_LABEL(p) ((p)->state)
 #define PANIC          printf
 
+void invoke_burm(NODEPTR_TYPE root);
 
 
 #endif

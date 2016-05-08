@@ -1,0 +1,38 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
+#include "tree.h"
+
+%}
+
+%start reg
+%term ARG, OP_NOOP=1 REG=2 NUM=3 ASSIGN=4 ADDASSIGN=5 ADD=6 OP_CONST=7
+
+%%
+
+reg: ADD(const_, const_)    # 1 # printf("Add!");
+
+reg:  OP_NOOP             # 1 # printf("Test I guess.\n");
+reg:	ASSIGN(reg,reg)     # 1 # printf("Stuff reduced!\n"); //printf("movq %s, %s\n",kids[1]->regname, kids[0]->regname);
+reg:	ASSIGN(reg,num)     # 1 # printf("Stuff reduced!\n"); //printf("movq $%d, %s\n",kids[1]->val,kids[0]->regname);
+reg:	ADDASSIGN(reg,reg)  # 1 # printf("Stuff reduced!\n"); //printf("addq %s, %s\n",kids[1]->regname,kids[0]->regname);
+reg:	ADDASSIGN(reg,num)  # 1 # printf("Stuff reduced!\n"); //printf("addq $%d, %s\n",kids[1]->val,kids[0]->regname);
+num:	ADD(num,num)	    # 0 # printf("Stuff reduced!\n"); //node->val=kids[0]->val + kids[1]->val; 
+
+reg:	REG		    # 0
+num:	NUM		    # 0
+const_: OP_CONST # 0 # printf("Const %s reduced\n", bnode->name);
+
+%%
+				
+//extern treenode *root;
+extern int yyparse(void);
+void burm_reduce(NODEPTR_TYPE bnode, int goalnt);
+
+void invoke_burm(NODEPTR_TYPE root) {
+	burm_label(root);
+	burm_reduce(root, 1);
+}
+

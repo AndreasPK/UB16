@@ -2,7 +2,7 @@
 #include <assert.h>
 
 
-const char* registerNames[] = { /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
+const char* regNames[] = { /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
   /*general registers*/ "%rax", "%r10", "%r11", "TooManyRegistersUsed", };
 
 ///Create a copy of the symbol list
@@ -75,5 +75,35 @@ nodeptr newChildNode(int op, nodeptr left, nodeptr right)
   n->children[0] = left;
   n->children[1] = right;
   return n;
+}
+
+int registers[9];
+
+int newReg()
+{
+  for(int i = 0; i < 9; i++)
+  {
+    if(registers[i] == 0)
+    {
+      registers[i] = 1;
+      return i;
+    }
+  }
+  assert(0);
+}
+
+int freeReg(int id)
+{
+  if(registers[id] == 0)
+  {
+    assert(0);
+  }
+
+  registers[id] = 0;
+}
+
+void clearReg()
+{
+  memset(registers, 0, sizeof(registers));
 }
 

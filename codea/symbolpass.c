@@ -195,15 +195,15 @@ nodeptr updateArguments(nodeptr argument)
   if(argument->children[0] == NULL)
   {
     argument->symbols = s;
-    return argument;
+    argument->children[0] = newNode(LASTARG);
   }
   else
   {
     argument->children[0]->symbols = s;
     nodeptr res = updateArguments(argument->children[0]);
     argument->symbols = res->symbols;
-    return argument;
   }
+  return argument;
 
   assert(0);
 }
