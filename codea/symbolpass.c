@@ -162,11 +162,17 @@ int getNextReg(psymList list)
   }
 }
 
+//Build list of arguments and add them to symbols.
+//element returned should contain the final argument list, can be 0
 nodeptr updateArguments(nodeptr argument)
 {
+  //symPrint(argument->symbols);
   //Check for valid argument.
   if(argument == NULL)
-    return NULL;
+    assert(0); //Argument tree should be terminated by lastarg
+
+  if(argument->op == LASTARG)
+    return argument;
   if(argument->op != ARG) {
     fprintf(stderr, "Error, non argument node in argument node position.\n");
     exit(3);
@@ -187,22 +193,20 @@ nodeptr updateArguments(nodeptr argument)
   s->next = argument->symbols;
   //Assign a register number to the argument. If there are none we start at zero, otherwise
   //we increment the latest register number by one. (The latest variable is at the head of the list).
-  if(argument->symbols == 0)
+  if(argument->symbols == NULL)
     s->reg = 0;
   else
     s->reg = argument->symbols->reg + 1;
 
+  //ARG as last element, no children
   if(argument->children[0] == NULL)
   {
-    argument->symbols = s;
+    //add lastarg for burm
     argument->children[0] = newNode(LASTARG);
   }
-  else
-  {
-    argument->children[0]->symbols = s;
-    nodeptr res = updateArguments(argument->children[0]);
-    argument->symbols = res->symbols;
-  }
+  argument->children[0]->symbols = s;
+  nodeptr res = updateArguments(argument->children[0]);
+  argument->symbols = res->symbols; //Backpropagate symbol additions
   return argument;
 
   assert(0);

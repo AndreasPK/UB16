@@ -35,7 +35,7 @@
 @attributes { T_AST ast; } guarded
 @attributes { T_AST ast; } funcCall
 
-@traversal @preorder codegen
+@traversal codegen
 
 %%
 orexpr : term OR orexpr
@@ -146,7 +146,7 @@ lexpr : ID
         @}
       | term CIRCUMFLEX
         @{
-            @i @lexpr.ast@ = @term.ast@;
+            @i @lexpr.ast@ = newChildNode(ADDRWRITE, @term.ast@, NULL);
         @}
       ;
 preexpr : NOT preexpr
@@ -170,6 +170,7 @@ program : program ID BRACEL parameterDef BRACER stats END SEMIC
                  nodeptr root = @program.0.ast@;
                  updateAstSymbols(root);
                  invoke_burm(root);
+                 createProgramCode(root->children[1]);
               }
           @}
         | 
@@ -181,8 +182,8 @@ stats : stat SEMIC stats
         @{
             @i @stats.0.ast@ = newChildNode(STATS, @stat.ast@, @stats.1.ast@);
             @codegen {
-               nodeptr root = @stats.0.ast@;
-               invoke_burm(root->children[0]);
+               //Useless ....nodeptr root = @stats.0.ast@;
+               //invoke_burm(root->children[0]);
             }
         @}
       | 
@@ -231,8 +232,7 @@ parameterDef : ID COMMA parameterDef
                @}
              | 
                @{
-                   @i @parameterDef.ast@ = NULL;
-;
+                   @i @parameterDef.ast@ = newNode(LASTARG);;
                @}
              ;
 guardedlist : guarded SEMIC guardedlist

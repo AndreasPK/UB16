@@ -86,14 +86,18 @@ int newReg()
     if(registers[i] == 0)
     {
       registers[i] = 1;
+      printf("Allocation r%d\n", i);
       return i;
     }
   }
   assert(0);
 }
 
-int freeReg(int id)
+void freeReg(int id)
 {
+  if(id == -1)
+    return;
+  printf("Freeing r%d\n", id);
   if(registers[id] == 0)
   {
     assert(0);
@@ -105,5 +109,16 @@ int freeReg(int id)
 void clearReg()
 {
   memset(registers, 0, sizeof(registers));
+}
+
+void createProgramCode(NODEPTR_TYPE statements)
+{
+  if(statements == NULL)
+    return;
+
+  if(statements->children[0] != NULL)
+    invoke_burm(statements->children[0]);
+
+  createProgramCode(statements->children[1]);
 }
 

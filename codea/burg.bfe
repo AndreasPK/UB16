@@ -8,34 +8,41 @@
 %}
 
 %start code
-%term ARG=1 FUNCTION=2 NOOP=3 RETURNSTAT=4 DOSTAT=5 VERDEF=6 VARASSIGN=7 TERMSTAT=8 STATS=9
+%term ARG=1 FUNCTION=2 NOOP=3 RETURNSTAT=4 DOSTAT=5 VARDEF=6 VARASSIGN=7 TERMSTAT=8 STATS=9
 %term EXPRTERM=10 CONSTTERM=11 CALLTERM=12 VARTERM=13 LESSEXPR=14 READEXPR=15 EQUALEXPR=16
 %term OREXPR=17 MULTEXPR=18 PLUSEXPR=19 MINUSEXPR=20 NOTEXPR=21 VARUSE=22 GUARDEDLIST=23
-%term GUARDED=24 FCALL=25 ARGEXPR=26 LASTARG=27 EXPR=28
+%term GUARDED=24 FCALL=25 ARGEXPR=26 LASTARG=27 EXPR=28 ADDRWRITE=29
 
 %%
 
 code: FUNCTION(arguments)           # 5 # printf("Define function label for %s\n", bnode->name); allocateParams(bnode->symbols);
-arguments: LASTARG                 # 5 # allocateParams(bnode->symbols);
-arguments: ARG(arguments)          # 5 # printf("Reducing arg %s assigned %d\n", bnode->name, symFind(bnode->symbols, bnode->name)->reg);
+arguments: LASTARG                 # 5 # clearReg(); allocateParams(bnode->symbols);
+arguments: ARG(arguments)          # 5 # //printf("Reducing arg %s assigned %d\n", bnode->name, symFind(bnode->symbols, bnode->name)->reg);
 code: statement # 5 #
 statement: RETURNSTAT(expr) # 5 # printf("Return register: %d\n", kids[0]->reg);
-expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg; puts("Useless expression");
+expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg; //puts("Useless expression");
 expr: NOTEXPR(term) # 5 # puts("invert working value");
 expr: MINUSEXPR(term) # 5 # bnode->reg = kids[0]->reg; puts("negate value");
-expr: PLUSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: PLUSEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: MULTEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: MULTEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: OREXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: OREXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: LESSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d < %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: EQUALEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d == %d\n", bnode->reg, kids[0]->reg, kids[1]->reg);
-expr: term # 5 # puts("Shortcut? expr=term."); printf("%d\n", bnode);
-term: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name); printf("Read value of variable %s, register %d.\n", bnode->name, getRegNumber(bnode->symbols, bnode->name));
-term: CONSTTERM # 5 # bnode->reg = newReg(); printf("Read const value %d.\n", bnode->value);
-term: FCALL # 5 # fprintf(stderr, "Error: Function call not supportet.\n");
+expr: PLUSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: PLUSEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: MULTEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: MULTEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: OREXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: OREXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: LESSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d < %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: EQUALEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d == %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: term # 1 # puts("Shortcut? expr=term."); printf("%d\n", bnode);
+term: VARUSE # 5 # bnode->reg = newReg(); printf("Read value of variable %s(%d) into register %d.\n", bnode->name, getRegNumber(bnode->symbols, bnode->name), bnode->reg);
+term: CONSTTERM # 5 # bnode->reg = newReg(); printf("%d = const $%d\n", bnode->reg, bnode->value);
+term: FCALL # 5 # bnode->reg = newReg(); fprintf(stderr, "Error: Function call not supportet.\n");
 term: EXPRTERM(expr) # 5 # bnode->reg = kids[0]->reg; puts("store result of subexpression.");
+statement: doexpr # 5 # printf("do stuff\n");
+doexpr: DOSTAT # 5 #fprintf(stderr, "Do not yet supported.\n");
+statement: VARASSIGN(memaddr, expr) # 5 # printf("*%d = %d\n", kids[0]->reg, kids[1]->reg); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
+memaddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
+statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); printf("%s(%d) = %d\n", ts->name, ts->reg, kids[0]->reg); freeReg(kids[0]->reg);
+statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); printf("%s (%d) = %d\n", ts->name, ts->reg, kids[1]->reg);
+statement: term # 5 # printf("Free used reg and shit (statement: term).\n");
 
 
 %%
@@ -46,6 +53,7 @@ term: EXPRTERM(expr) # 5 # bnode->reg = kids[0]->reg; puts("store result of sube
 //extern treenode *root;
 extern int yyparse(void);
 void burm_reduce(NODEPTR_TYPE bnode, int goalnt);
+psymList ts;
 
 int getRegNumber(psymList list, const char* name)
 {

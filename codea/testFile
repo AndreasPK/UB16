@@ -1,7 +1,12 @@
-// This test file checks a simple program (faculty of n).
+// Tests the arithmetic elements
 
-someFunction(para, parb)
-	return 2+1;
-  return para + parb;
+arith(a,b,c)
+    var x := (a * b) + c;
+    var y := a + b + c;
+    return x * y;
 end;
 
+main()
+    var x := 2 * arith(0x1, 0x2, 0x3);
+    return 0;
+end;    

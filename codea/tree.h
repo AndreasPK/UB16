@@ -56,6 +56,7 @@ enum {
   ARGEXPR,
   LASTARG,
   EXPR,
+  ADDRWRITE,
 };
 
 ///AST-Node
@@ -98,7 +99,7 @@ nodeptr updateAstSymbols(nodeptr tree);
 extern int registers[];
 
 int newReg(void);
-int freeReg(int id);
+void freeReg(int id);
 void clearReg();
 
 #define NODEPTR_TYPE   nodeptr
@@ -108,6 +109,7 @@ void clearReg();
 #define STATE_LABEL(p) ((p)->state)
 #define PANIC          printf
 
+void createProgramCode(NODEPTR_TYPE statements);
 void invoke_burm(NODEPTR_TYPE root);
 
 
