@@ -5,296 +5,252 @@
 %{ 
   #include <stdio.h>
   #include <string.h>
-  #include "functions.h"
   int yylex(void);
   void yyerror(char* s);
   void msg(char* s);
   const char* someNumber = "someNumber";
  %}
-%token STAR NUMBER DO NOT LEXER_ERROR MINUS ID BREAK COLON ARROWR BRACEL CONTINUE COMMA EQUAL BRACER OR LESS RETURN ASSIGN PLUS VAR SEMIC END CIRCUMFLEX
+%token STAR DO NOT LEXER_ERROR ID BREAK BRACEL CONTINUE COMMA EQUAL BRACER LESS RETURN PLUS VAR NUMBER MINUS COLON ARROWR OR ASSIGN SEMIC END CIRCUMFLEX
 
 
 %start program
 
-@attributes { T_SIN sin; } guardedlist
-@attributes { T_SOUT sout; } parameterDef
-@attributes { T_SIN sin; T_SOUT sout; } stats
-@attributes { T_SIN sin; } expr
-@attributes { T_SIN sin; } dostat
-@attributes { T_VALUE value; } NUMBER
+@attributes { T_AST ast; } dostat
 @attributes { T_NAME name; } ID
-@attributes { T_SIN sin; } plusexpr
-@attributes { T_SIN sin; T_SOUT sout; } stat
-@attributes { T_SIN sin; } arguments
-@attributes { T_SIN sin; } lexpr
-@attributes { T_SIN sin; } term
-@attributes { T_SIN sin; } preexpr
-@attributes { T_SIN sin; } orexpr
-@attributes { T_SIN sin; } maybeid
-@attributes { T_SIN sin; } multexpr
-@attributes { T_SIN sin; } guarded
-@attributes { T_SIN sin; } funcCall
+@attributes { T_AST ast; } program
+@attributes { T_AST ast; } guarded
+@attributes { T_AST ast; } funcCall
+@attributes { T_AST ast; } guardedlist
+@attributes { T_AST ast; } parameterDef
+@attributes { T_AST ast; } stats
+@attributes { T_AST ast; } expr
+@attributes { T_VALUE value; } NUMBER
+@attributes { T_AST ast; } plusexpr
+@attributes { T_AST ast; } stat
+@attributes { T_AST ast; } arguments
+@attributes { T_AST ast; } lexpr
+@attributes { T_AST ast; } term
+@attributes { T_AST ast; } preexpr
+@attributes { T_AST ast; } orexpr
+@attributes { T_NAME name; } maybeid
+@attributes { T_AST ast; } multexpr
 
-@traversal codegen
-@traversal labelUse
-@traversal varDef
-@traversal varUse
+@traversal CompilerPasses
 
 %%
-stats : stat SEMIC stats
-        @{
-            @i @stats.0.sout@ = @stat.sout@;
-            @i @stats.1.sin@ = @stats.0.sout@;
-            @i @stat.sin@ = @stats.0.sin@;
-        @}
-      | 
-        @{
-            @i @stats.sout@ = @stats.sin@;
-        @}
-      ;
-parameterDef : ID COMMA parameterDef
-               @{
-                   @i @parameterDef.0.sout@ = sym_add(@parameterDef.1.sout@, @ID.name@, ST_VAR);;
-                   @varDef {
-                      printf("%s\n", @ID.name@);
-                      if(sym_find(@parameterDef.1.sout@, @ID.name@, ST_ANY) != NULL)
-                      {
-                      	printf("Error, Parameter defined twice!\n");
-                      	exit(3);
-                      }
-                   }
-               @}
-             | ID
-               @{
-                   @i @parameterDef.sout@ = sym_add(NULL, @ID.name@, ST_VAR);;
-               @}
-             | 
-               @{
-                   @i @parameterDef.sout@ = NULL;
-               @}
-             ;
-guardedlist : guarded SEMIC guardedlist
-              @{
-                  @i @guarded.sin@ = @guardedlist.0.sin@;
-                  @i @guardedlist.1.sin@ = @guardedlist.0.sin@;
-              @}
-            | 
-            ;
-funcCall : ID BRACEL arguments BRACER
-           @{
-               @i @arguments.sin@ = @funcCall.sin@;
-           @}
-         ;
-preexpr : NOT preexpr
-          @{
-              @i @preexpr.1.sin@ = @preexpr.0.sin@;
-          @}
-        | MINUS preexpr
-          @{
-              @i @preexpr.1.sin@ = @preexpr.0.sin@;
-          @}
-        | term
-          @{
-              @i @term.sin@ = @preexpr.sin@;
-          @}
-        ;
-orexpr : term OR orexpr
-         @{
-             @i @orexpr.1.sin@ = @orexpr.0.sin@;
-             @i @term.sin@ = @orexpr.0.sin@;
-         @}
-       | term
-         @{
-             @i @term.sin@ = @orexpr.sin@;
-         @}
-       ;
-lexpr : ID
-        @{
-            @varUse {
-               if(sym_use(@lexpr.sin@,@ID.name@,ST_VAR) != 0)
-               {
-               	printf("Error, variable %s not defined but assigned!\n", @ID.name@);
-               	exit(3);
-               }
-            }
-        @}
-      | term CIRCUMFLEX
-        @{
-            @i @term.sin@ = @lexpr.sin@;
-        @}
-      ;
 multexpr : term STAR multexpr
            @{
-               @i @multexpr.1.sin@ = @multexpr.0.sin@;
-               @i @term.sin@ = @multexpr.0.sin@;
+               @i @multexpr.0.ast@ = newChildNode(MULTEXPR, @term.ast@, @multexpr.1.ast@);;
            @}
          | term
            @{
-               @i @term.sin@ = @multexpr.sin@;
+               @i @multexpr.ast@ = @term.ast@;
            @}
          ;
-term : BRACEL expr BRACER
+stat : RETURN expr
        @{
-           @i @expr.sin@ = @term.sin@;
+           @i @stat.ast@ = newChildNode(RETURNSTAT, @expr.ast@, NULL);;
        @}
-     | NUMBER
-     | funcCall
+     | dostat
        @{
-           @i @funcCall.sin@ = @term.sin@;
+           @i @stat.ast@ = @dostat.ast@;
        @}
-     | ID
+     | VAR ID ASSIGN expr
        @{
-           @varUse {
-              printf("Reading variable: %s\n", @ID.name@);
-              if(sym_use(@term.sin@,@ID.name@,ST_VAR) != 0)
-              {
-                printf("Error variable can't be used.\n");
-                exit(3);
-              }
-              
-           }
+           @i @stat.ast@ = newChildNode(VARDEF, @expr.ast@, NULL);
+@stat.ast@->name = @ID.name@;;
+       @}
+     | lexpr ASSIGN expr
+       @{
+           @i @stat.ast@ = newChildNode(VARASSIGN, @lexpr.ast@, @expr.ast@);
+       @}
+     | term
+       @{
+           @i @stat.ast@ = newChildNode(TERMSTAT, @term.ast@, NULL);
        @}
      ;
 program : program ID BRACEL parameterDef BRACER stats END SEMIC
           @{
-              @codegen {
-                 invoke_burm(newNode(OP_NOOP), 1);
-                 printf("%s \"generated\".\n", @ID.name@);
+              @i @program.0.ast@ = newChildNode(FUNCTION, @parameterDef.ast@, @stats.ast@);
+@program.0.ast@->name = @ID.name@;;
+              @CompilerPasses {
+                 @program.0.ast@ = updateAstSymbols(@program.0.ast@);
               }
-              @i @stats.sin@ = @parameterDef.sout@;
           @}
         | 
+          @{
+              @i @program.ast@ = NULL;;
+          @}
         ;
+parameterDef : ID COMMA parameterDef
+               @{
+                   @i @parameterDef.0.ast@ = newArgNode(@ID.name@);
+@parameterDef.0.ast@->children[0] = @parameterDef.1.ast@;;
+               @}
+             | ID
+               @{
+                   @i @parameterDef.ast@ = newArgNode(@ID.name@);
+               @}
+             | 
+               @{
+                   @i @parameterDef.ast@ = NULL;
+               @}
+             ;
+guarded : expr ARROWR stats CONTINUE maybeid
+          @{
+              @i @guarded.ast@ = newChildNode(GUARDED, @expr.ast@, @stats.ast@);
+@guarded.ast@->name = @maybeid.name@;
+          @}
+        | expr ARROWR stats BREAK maybeid
+          @{
+              @i @guarded.ast@ = newChildNode(GUARDED, @expr.ast@, @stats.ast@);
+@guarded.ast@->name = @maybeid.name@;
+          @}
+        ;
+guardedlist : guarded SEMIC guardedlist
+              @{
+                  @i @guardedlist.0.ast@ = newChildNode(GUARDEDLIST, @guarded.ast@, @guardedlist.1.ast@);;
+              @}
+            | 
+              @{
+                  @i @guardedlist.ast@ = NULL;;
+              @}
+            ;
+arguments : expr
+            @{
+                @i @arguments.ast@ = newChildNode(ARGEXPR, @expr.ast@, NULL);
+            @}
+          | expr COMMA arguments
+            @{
+                @i @arguments.0.ast@ = newChildNode(ARGEXPR, @expr.ast@, @arguments.1.ast@);
+            @}
+          | 
+            @{
+                @i @arguments.ast@ = NULL;;
+            @}
+          ;
+stats : stat SEMIC stats
+        @{
+            @i @stats.0.ast@ = newChildNode(STATS, @stat.ast@, @stats.1.ast@);
+        @}
+      | 
+        @{
+            @i @stats.ast@ = NULL;
+        @}
+      ;
 dostat : ID COLON DO guardedlist END
          @{
-             @i @guardedlist.sin@ = sym_add(@dostat.sin@, @ID.name@, ST_LABEL);;
-             @varDef {
-                if(sym_def(@dostat.sin@, @ID.name@, ST_LABEL) != 0)
-                {
-                  printf("Error defining label %s.\n", @ID.name@);
-                  exit(3);
-                }
-             }
+             @i @dostat.ast@ = newChildNode(DOSTAT, @guardedlist.ast@, NULL);
+@dostat.ast@->name = @ID.name@;;
          @}
        | DO guardedlist END
          @{
-             @i @guardedlist.sin@ = @dostat.sin@;
+             @i @dostat.ast@ = newChildNode(DOSTAT, @guardedlist.ast@, NULL);
+@dostat.ast@->name = NULL;;
          @}
        ;
-plusexpr : term PLUS plusexpr
+funcCall : ID BRACEL arguments BRACER
            @{
-               @i @term.sin@ = @plusexpr.0.sin@;
-               @i @plusexpr.1.sin@ = @plusexpr.0.sin@;
-           @}
-         | term
-           @{
-               @i @term.sin@ = @plusexpr.sin@;
+               @i @funcCall.ast@ = newChildNode(FCALL, @arguments.ast@, NULL);
+@funcCall.ast@->name = @ID.name@;
            @}
          ;
 expr : preexpr
        @{
-           @i @preexpr.sin@ = @expr.sin@;
+           @i @expr.ast@ = @preexpr.ast@;
        @}
      | term CIRCUMFLEX
        @{
-           @i @term.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(READEXPR, @term.ast@, NULL);
        @}
      | term PLUS plusexpr
        @{
-           @i @term.sin@ = @expr.sin@;
-           @i @plusexpr.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(PLUSEXPR, @term.ast@, @plusexpr.ast@);;
        @}
      | term STAR multexpr
        @{
-           @i @term.sin@ = @expr.sin@;
-           @i @multexpr.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(MULTEXPR, @term.ast@, @multexpr.ast@);;
        @}
      | term OR orexpr
        @{
-           @i @term.sin@ = @expr.sin@;
-           @i @orexpr.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(OREXPR, @term.ast@, @orexpr.ast@);
        @}
      | term LESS term
        @{
-           @i @term.1.sin@ = @expr.sin@;
-           @i @term.0.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(LESSEXPR, @term.0.ast@, @term.1.ast@);
        @}
      | term EQUAL term
        @{
-           @i @term.1.sin@ = @expr.sin@;
-           @i @term.0.sin@ = @expr.sin@;
+           @i @expr.ast@ = newChildNode(EQUALEXPR, @term.0.ast@, @term.1.ast@);
        @}
      ;
+plusexpr : term PLUS plusexpr
+           @{
+               @i /* INVALID ASSIGNMENT */@plusexpr.0.ast@ = @term.ast@;
+           @}
+         | term
+           @{
+               @i @plusexpr.ast@ = @term.ast@;
+           @}
+         ;
+lexpr : ID
+        @{
+            @i @lexpr.ast@ = newNode(VARUSE);
+@lexpr.ast@->name = @ID.name@;;
+        @}
+      | term CIRCUMFLEX
+        @{
+            @i @lexpr.ast@ = @term.ast@;
+        @}
+      ;
+preexpr : NOT preexpr
+          @{
+              @i @preexpr.0.ast@ = newChildNode(NOTEXPR, @preexpr.1.ast@, NULL);;
+          @}
+        | MINUS preexpr
+          @{
+              @i @preexpr.0.ast@ = newChildNode(MINUSEXPR, @preexpr.1.ast@, NULL);
+          @}
+        | term
+          @{
+              @i @preexpr.ast@ = @term.ast@;
+          @}
+        ;
 maybeid : ID
           @{
-              @labelUse {
-                 if(sym_use(@maybeid.sin@, @ID.name@, ST_LABEL) != 0)
-                 {
-                 	printf("Label check failed for %s.\n", @ID.name@);
-                 	sym_list(@maybeid.sin@);
-                 	exit(3);
-                 }
-              }
+              @i @maybeid.name@ = @ID.name@;
           @}
         | 
-        ;
-arguments : expr
-            @{
-                @i @expr.sin@ = @arguments.sin@;
-            @}
-          | expr COMMA arguments
-            @{
-                @i @expr.sin@ = @arguments.0.sin@;
-                @i @arguments.1.sin@ = @arguments.0.sin@;
-            @}
-          | 
-          ;
-guarded : expr ARROWR stats CONTINUE maybeid
           @{
-              @i @maybeid.sin@ = @guarded.sin@;
-              @i @expr.sin@ = @guarded.sin@;
-              @i @stats.sin@ = @guarded.sin@;
-          @}
-        | expr ARROWR stats BREAK maybeid
-          @{
-              @i @maybeid.sin@ = @guarded.sin@;
-              @i @stats.sin@ = @guarded.sin@;
-              @i @expr.sin@ = @guarded.sin@;
+              @i @maybeid.name@ = NULL;;
           @}
         ;
-stat : RETURN expr
+orexpr : term OR orexpr
+         @{
+             @i @orexpr.0.ast@ = newChildNode(OREXPR, @term.ast@, @orexpr.1.ast@);;
+         @}
+       | term
+         @{
+             @i @orexpr.ast@ = @term.ast@;
+         @}
+       ;
+term : BRACEL expr BRACER
        @{
-           @i @stat.sout@ = @stat.sin@;
-           @i @expr.sin@ = @stat.sin@;
+           @i @term.ast@ = newChildNode(EXPRTERM, @expr.ast@, NULL);;
        @}
-     | dostat
+     | NUMBER
        @{
-           @i @dostat.sin@ = @stat.sin@;
-           @i @stat.sout@ = @stat.sin@;
+           @i @term.ast@ = newNode(CONSTTERM);
+@term.ast@->value = @NUMBER.value@;
        @}
-     | VAR ID ASSIGN expr
+     | funcCall
        @{
-           @i   @stat.sout@ = sym_add(@stat.sin@, @ID.name@, ST_VAR);
-;
-           @varDef {
-              if(sym_def(@stat.sin@, @ID.name@, ST_VAR) != 0)
-              {
-                printf("Error, can't define variable %s.\n", @ID.name@);
-                exit(3);
-              }
-           }
-           @i @expr.sin@ = @stat.sin@;
+           @i @term.ast@ = @funcCall.ast@;
        @}
-     | lexpr ASSIGN expr
+     | ID
        @{
-           @i @expr.sin@ = @stat.sin@;
-           @i @lexpr.sin@ = @stat.sin@;
-           @i @stat.sout@ = @stat.sin@;
-       @}
-     | term
-       @{
-           @i @stat.sout@ = @stat.sin@;
-           @i @term.sin@ = @stat.sin@;
+           @i @term.ast@ = newNode(VARUSE);
+@term.ast@->name = @ID.name@;
        @}
      ;
 
@@ -303,7 +259,7 @@ stat : RETURN expr
 
 int main()
 {
-  yydebug = 1;
+  //yydebug = 1;
   int pres = yyparse();
   if(pres == 0) return 0;
   if(pres == 1) return 2;
