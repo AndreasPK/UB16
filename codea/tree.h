@@ -7,7 +7,9 @@
 #include <sys/queue.h>
 #include <assert.h>
 
+#ifndef _BURM_WTF
 typedef struct burm_state *STATEPTR_TYPE;
+#endif
 
 extern const char* regNames[];
 

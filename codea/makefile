@@ -21,7 +21,7 @@ burg.c: burg.bfe
 	bfe < $< | iburg > $@
 
 burg.o: burg.c
-	gcc -c $(C_OPTS) $< -o $@
+	gcc -c $(C_OPTS) -D_BURM_WTF $< -o $@
 
 tree.o: tree.c tree.h
 	gcc $(C_OPTS) -c $< -o $@
