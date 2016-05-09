@@ -43,6 +43,11 @@ test: $(NAME)
 	./$< < testFile
 	echo Result: $$?
 
+testAsm: $(NAME) testFile
+	./$(NAME) < testFile > test.s
+	gcc -g test.s -o test
+	./test; echo Returned: $$?
+
 clean:
 	rm *.o grammar.h grammar.c lexer.c burg.c
 	rm $(NAME)

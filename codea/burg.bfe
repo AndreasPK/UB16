@@ -15,34 +15,34 @@
 
 %%
 
-code: FUNCTION(arguments)           # 5 # printf("Define function label for %s\n", bnode->name); allocateParams(bnode->symbols);
+code: FUNCTION(arguments)           # 5 # allocateParams(bnode->symbols); emit("FUNCTION", bnode);
 arguments: LASTARG                 # 5 # clearReg();
 arguments: ARG(arguments)          # 5 #
 code: statement # 5 #
-statement: RETURNSTAT(expr) # 5 # printf("Return register: %d\n", kids[0]->reg); freeReg(kids[0]->reg);
-expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg; //puts("Useless expression");
-expr: NOTEXPR(term) # 5 # puts("invert working value");
-expr: MINUSEXPR(term) # 5 # bnode->reg = kids[0]->reg; puts("negate value");
-expr: PLUSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: PLUSEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d + %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: MULTEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: MULTEXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d * %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: OREXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: OREXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: LESSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d < %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: EQUALEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d == %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
-expr: READEXPR(term) # 5 # bnode->reg = newReg(); printf("r%d = *r%d\n", bnode->reg, kids[0]->reg); freeReg(kids[0]->reg);
-expr: term # 1 # puts("Shortcut? expr=term."); printf("%d\n", bnode);
-term: VARUSE # 5 # bnode->reg = newReg(); printf("Read value of variable %s(%d) into register %d.\n", bnode->name, getRegNumber(bnode->symbols, bnode->name), bnode->reg);
-term: CONSTTERM # 5 # bnode->reg = newReg(); printf("%d = const $%d\n", bnode->reg, bnode->value);
+statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode); freeReg(kids[0]->reg);
+expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg;
+expr: NOTEXPR(term) # 5 # bnode->reg=newReg(); emit("NOTEXPR", bnode); freeReg(kids[0]->reg);
+expr: MINUSEXPR(term) # 5 # bnode->reg=newReg(); emit("MINUSEXPR", bnode); freeReg(kids[0]->reg);
+expr: PLUSEXPR(term, term) # 5 # bnode->reg = newReg(); emit("PLUSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: PLUSEXPR(term, expr) # 5 # bnode->reg = newReg(); emit("PLUSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: MULTEXPR(term, term) # 5 # bnode->reg = newReg(); emit("MULTEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: MULTEXPR(term, expr) # 5 # bnode->reg = newReg(); emit("MULTEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: OREXPR(term, term) # 5 # bnode->reg = newReg(); emit("OREXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: OREXPR(term, expr) # 5 # bnode->reg = newReg(); emit("OREXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: LESSEXPR(term, term) # 5 # bnode->reg = newReg(); emit("LESSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: EQUALEXPR(term, term) # 5 # bnode->reg = newReg(); emit("EQUALEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: READEXPR(term) # 5 # bnode->reg = newReg(); emit("READEXPR", bnode); freeReg(kids[0]->reg);
+expr: term # 1 # //puts("Shortcut? expr=term."); printf("%d\n", bnode);
+term: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
+term: CONSTTERM # 5 # bnode->reg = newReg(); emit("CONSTTERM", bnode); //printf("%d = const $%d\n", bnode->reg, bnode->value);
 term: FCALL # 5 # bnode->reg = newReg(); fprintf(stderr, "Error: Function call not supportet.\n");
-term: EXPRTERM(expr) # 5 # bnode->reg = kids[0]->reg; puts("store result of subexpression.");
-statement: doexpr # 5 # printf("do stuff\n");
+term: EXPRTERM(expr) # 5 # bnode->reg = kids[0]->reg; //puts("store result of subexpression.");
+statement: doexpr # 5 # fprintf(stderr, "DOSTAT: Do not supported.\n"); //printf("do stuff\n");
 doexpr: DOSTAT # 5 #fprintf(stderr, "Do not yet supported.\n");
-statement: VARASSIGN(memaddr, expr) # 5 # printf("*%d = %d\n", kids[0]->reg, kids[1]->reg); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
+statement: VARASSIGN(memaddr, expr) # 5 # emit("MEMVARWRITE", bnode); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
 memaddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
-statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); printf("%s(%d) = %d\n", ts->name, ts->reg, kids[0]->reg); freeReg(kids[0]->reg);
-statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); printf("%s (%d) = %d\n", ts->name, ts->reg, kids[1]->reg); freeReg(kids[1]->reg);
+statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); bnode->reg=ts->reg; emit("VARDEF", bnode); freeReg(kids[0]->reg);
+statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); emit("VARASSIGN", bnode); freeReg(kids[1]->reg);
 statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); freeReg(kids[0]->reg);
 
 
@@ -51,7 +51,129 @@ statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); fre
 //reg: num                   # 5 # printf("Value: %d\n", bnode->value);
 //num: CONSTTERM             # 0
 
-//extern treenode *root;
+char codeBuffer[2048];
+
+//Wasts memory but fuckid
+
+char* asm_mv(char* buf, int from, int to)
+{
+  sprintf(buf, "#%s := %s\nmovq %s, %s\n", regNames[to], regNames[from], regNames[from], regNames[to]);
+  return buf;
+}
+
+void emit(const char* what, NODEPTR_TYPE bnode)
+{
+  static char mv1[512];
+  static char mv2[512];
+  static char mv3[512];
+
+  if(strcmp(what, "FUNCTION") == 0)
+  {
+    sprintf(codeBuffer, ".global %s\n%s:\n\n", bnode->name, bnode->name);
+  }
+  else if(strcmp(what, "RETURN") == 0)
+  {
+    sprintf(codeBuffer, "movq %s, %%rax \nret\n\n", regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "MINUSEXPR") == 0)
+  {
+    asm_mv(mv1, LEFT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer, "#MINUSEXPR\n %s\n neg %s\n", mv1, regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "NOTEXPR") == 0)
+  {
+    asm_mv(mv1, LEFT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer, "#NOTEXPR\n %s\n not %s\n", mv1, regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "PLUSEXPR") == 0)
+  {
+    asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer, "#PLUSEXPR\n %s\n addq %s, %s \n", mv1, regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "MULTEXPR") == 0)
+  {
+    asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer, "#MULTEXPR\n %s\n imulq %s, %s \n", mv1, regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "OREXPR") == 0)
+  {
+    asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer, "#OREXPR\n %s\n or %s, %s \n", mv1, regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "LESSEXPR") == 0)
+  {
+    //-1 == TRUE und 0 == FALSE (Whyyyyyy)
+    sprintf(codeBuffer,
+      "#LESSEXPR\n"
+      "push %%r15\n"
+      "test %2$s, %3$s \n"
+      "setl %%r15b\n"
+      "dec %%r15b\n"
+      "movsx %%r15b, %1$s\n"
+      "pop %%r15\n",
+      regNames[bnode->reg], regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
+  }
+  else if(strcmp(what, "EQUALEXPR") == 0)
+  {
+    //-1 == TRUE und 0 == FALSE (Whyyyyyy)
+    sprintf(codeBuffer,
+      "#EQUALEXPR\n"
+      "push %%r15\n"
+      "test %2$s, %3$s \n"
+      "setz %%r15b\n"
+      "dec %%r15b\n"
+      "movsx %%r15b, %1$s\n"
+      "pop %%r15\n",
+      regNames[bnode->reg], regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
+  }
+  else if(strcmp(what, "READEXPR") == 0)
+  {
+    sprintf(codeBuffer,
+      "#READEXPR\n"
+      "movq (%1$s), %2$s # %2$s := *%1$s\n",
+      regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "CONSTTERM") == 0)
+  {
+    sprintf(codeBuffer,
+      "#CONSTTERM\n"
+      "movq $%1$ld, %2$s # %2$s := (const) %1$ld\n",
+      bnode->value, regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "MEMVARWRITE") == 0)
+  {
+    //*var = expr;
+    sprintf(codeBuffer,
+      "#WRITE TO ADDR STORED IN VAR\n"
+      "movq %1$s, (%2$s) # *%2$s := %1$s\n",
+      regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
+  }
+  else if(strcmp(what, "VARDEF") == 0)
+  {
+    //var = expr;
+    sprintf(codeBuffer,
+      "#WRITE TO VAR(DEF)\n"
+      "movq %1$s, %2$s # %2$s := %1$s\n",
+      regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+  }
+  else if(strcmp(what, "VARASSIGN") == 0)
+  {
+    //var = expr;
+    sprintf(codeBuffer,
+      "#WRITE TO VAR\n"
+      "movq %1$s, %2$s # %2$s := %1$s\n",
+      regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
+  }
+  else
+  {
+    fprintf(stderr, "Invalid code node: %s\n", what);
+    return;
+  }
+
+
+  puts(codeBuffer);
+}
+
 extern int yyparse(void);
 void burm_reduce(NODEPTR_TYPE bnode, int goalnt);
 psymList ts;
@@ -68,7 +190,7 @@ void allocateParams(psymList par)
   allocateParams(par->next);
   int i = newArgReg();
   par->reg = i;
-  printf("r%d = arg %s\n", i, par->name);
+  //printf("r%d = arg %s\n", i, par->name);
 }
 
 void invoke_burm(NODEPTR_TYPE root) {

@@ -95,7 +95,7 @@ int newReg()
       memset(r, 0, sizeof(*r));
       r->regNumber = i;
       registers[i] = r;
-      printf("Allocation r%d\n", i);
+      //printf("Allocation r%d\n", i);
       return i;
     }
   }
@@ -115,11 +115,11 @@ void freeReg(int id)
   if(id == -1)
     return;
   if(registers[id]->is_argument) {
-    printf("Keeping argument in register.\n");
+    //printf("Keeping argument in register.\n");
     return;
   }
 
-  printf("Freeing r%d\n", id);
+  //printf("Freeing r%d\n", id);
   if(registers[id] == NULL)
   {
     assert(0);
