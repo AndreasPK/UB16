@@ -16,10 +16,10 @@
 %%
 
 code: FUNCTION(arguments)           # 5 # printf("Define function label for %s\n", bnode->name); allocateParams(bnode->symbols);
-arguments: LASTARG                 # 5 # clearReg(); allocateParams(bnode->symbols);
-arguments: ARG(arguments)          # 5 # //printf("Reducing arg %s assigned %d\n", bnode->name, symFind(bnode->symbols, bnode->name)->reg);
+arguments: LASTARG                 # 5 # clearReg();
+arguments: ARG(arguments)          # 5 #
 code: statement # 5 #
-statement: RETURNSTAT(expr) # 5 # printf("Return register: %d\n", kids[0]->reg);
+statement: RETURNSTAT(expr) # 5 # printf("Return register: %d\n", kids[0]->reg); freeReg(kids[0]->reg);
 expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg; //puts("Useless expression");
 expr: NOTEXPR(term) # 5 # puts("invert working value");
 expr: MINUSEXPR(term) # 5 # bnode->reg = kids[0]->reg; puts("negate value");
@@ -31,6 +31,7 @@ expr: OREXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", b
 expr: OREXPR(term, expr) # 5 # bnode->reg = newReg(); printf("%d = %d | %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: LESSEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d < %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: EQUALEXPR(term, term) # 5 # bnode->reg = newReg(); printf("%d = %d == %d\n", bnode->reg, kids[0]->reg, kids[1]->reg); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
+expr: READEXPR(term) # 5 # bnode->reg = newReg(); printf("r%d = *r%d\n", bnode->reg, kids[0]->reg); freeReg(kids[0]->reg);
 expr: term # 1 # puts("Shortcut? expr=term."); printf("%d\n", bnode);
 term: VARUSE # 5 # bnode->reg = newReg(); printf("Read value of variable %s(%d) into register %d.\n", bnode->name, getRegNumber(bnode->symbols, bnode->name), bnode->reg);
 term: CONSTTERM # 5 # bnode->reg = newReg(); printf("%d = const $%d\n", bnode->reg, bnode->value);
@@ -41,8 +42,8 @@ doexpr: DOSTAT # 5 #fprintf(stderr, "Do not yet supported.\n");
 statement: VARASSIGN(memaddr, expr) # 5 # printf("*%d = %d\n", kids[0]->reg, kids[1]->reg); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
 memaddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
 statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); printf("%s(%d) = %d\n", ts->name, ts->reg, kids[0]->reg); freeReg(kids[0]->reg);
-statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); printf("%s (%d) = %d\n", ts->name, ts->reg, kids[1]->reg);
-statement: term # 5 # printf("Free used reg and shit (statement: term).\n");
+statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); printf("%s (%d) = %d\n", ts->name, ts->reg, kids[1]->reg); freeReg(kids[1]->reg);
+statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); freeReg(kids[0]->reg);
 
 
 %%
@@ -65,8 +66,9 @@ void allocateParams(psymList par)
   if(par == NULL)
     return;
   allocateParams(par->next);
-  newReg();
-  //printf("%d\n", par->reg);
+  int i = newArgReg();
+  par->reg = i;
+  printf("r%d = arg %s\n", i, par->name);
 }
 
 void invoke_burm(NODEPTR_TYPE root) {

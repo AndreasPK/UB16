@@ -96,9 +96,10 @@ psymList symFind(const psymList head, const char* name);
 nodeptr updateAstSymbols(nodeptr tree);
 //BURM definitions
 
-extern int registers[];
+extern struct regInfo* registers[];
 
 int newReg(void);
+int newArgReg(void);
 void freeReg(int id);
 void clearReg();
 

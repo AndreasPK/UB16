@@ -77,33 +77,56 @@ nodeptr newChildNode(int op, nodeptr left, nodeptr right)
   return n;
 }
 
-int registers[9];
+typedef struct regInfo
+{
+  int regNumber;
+  int is_argument;
+}* pregInfo;
+
+struct regInfo* registers[9];
 
 int newReg()
 {
   for(int i = 0; i < 9; i++)
   {
-    if(registers[i] == 0)
+    if(registers[i] == NULL)
     {
-      registers[i] = 1;
+      pregInfo r = (pregInfo) malloc(sizeof(*r));
+      memset(r, 0, sizeof(*r));
+      r->regNumber = i;
+      registers[i] = r;
       printf("Allocation r%d\n", i);
       return i;
     }
   }
+  fprintf(stderr, "Too many registers allocated!\n");
   assert(0);
+}
+
+int newArgReg(void)
+{
+  int reg = newReg();
+  registers[reg]->is_argument = 1;
+  return reg;
 }
 
 void freeReg(int id)
 {
   if(id == -1)
     return;
+  if(registers[id]->is_argument) {
+    printf("Keeping argument in register.\n");
+    return;
+  }
+
   printf("Freeing r%d\n", id);
-  if(registers[id] == 0)
+  if(registers[id] == NULL)
   {
     assert(0);
   }
 
-  registers[id] = 0;
+  free(registers[id]);
+  registers[id] = NULL;
 }
 
 void clearReg()
