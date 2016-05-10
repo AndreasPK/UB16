@@ -19,7 +19,7 @@ code: FUNCTION(arguments)           # 5 # allocateParams(bnode->symbols); emit("
 arguments: LASTARG                 # 5 # clearReg();
 arguments: ARG(arguments)          # 5 #
 code: statement # 5 #
-statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode); freeReg(kids[0]->reg);
+statement: RETURNSTAT(expr) # 5 # bnode->reg = kids[0]->reg; emit("RETURN", bnode); freeReg(kids[0]->reg);
 expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg;
 expr: NOTEXPR(term) # 5 # bnode->reg=newReg(); emit("NOTEXPR", bnode); freeReg(kids[0]->reg);
 expr: MINUSEXPR(term) # 5 # bnode->reg=newReg(); emit("MINUSEXPR", bnode); freeReg(kids[0]->reg);
@@ -88,12 +88,22 @@ void emit(const char* what, NODEPTR_TYPE bnode)
   else if(strcmp(what, "PLUSEXPR") == 0)
   {
     asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
-    sprintf(codeBuffer, "#PLUSEXPR\n %s\n addq %s, %s \n", mv1, regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+    sprintf(codeBuffer,
+    "#PLUSEXPR %3$s = %1$s + %2$s\n"
+    "%4$s\n" //Move
+    "addq %1$s, %3$s \n",
+    regNames[LEFT_CHILD(bnode)->reg], regNames[RIGHT_CHILD(bnode)->reg], regNames[bnode->reg], mv1);
   }
   else if(strcmp(what, "MULTEXPR") == 0)
   {
-    asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
-    sprintf(codeBuffer, "#MULTEXPR\n %s\n imulq %s, %s \n", mv1, regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+    //asm_mv(mv1, RIGHT_CHILD(bnode)->reg, bnode->reg);
+    sprintf(codeBuffer,
+    "#MULTEXPR %3$s = %1$s * %2$s\n"
+    //"%1$s\n" //mov
+    "movq %2$s, %%rax\n"
+    "imulq %1$s, %%rax \n"
+    "movq %%rax, %3$s\n",
+    regNames[LEFT_CHILD(bnode)->reg], regNames[RIGHT_CHILD(bnode)->reg], regNames[bnode->reg]);
   }
   else if(strcmp(what, "OREXPR") == 0)
   {

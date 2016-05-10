@@ -3,7 +3,8 @@
 
 
 const char* regNames[] = { /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
-  /*general registers*/ "%rax", "%r10", "%r11", "TooManyRegistersUsed", };
+  /*general registers*/ "%r10", "%r11", "TooManyRegistersUsed", };
+#define REG_COUNT (8)
 
 ///Create a copy of the symbol list
 psymList symClone(psymList head)
@@ -83,11 +84,11 @@ typedef struct regInfo
   int is_argument;
 }* pregInfo;
 
-struct regInfo* registers[9];
+struct regInfo* registers[REG_COUNT];
 
 int newReg()
 {
-  for(int i = 0; i < 9; i++)
+  for(int i = 0; i < REG_COUNT; i++)
   {
     if(registers[i] == NULL)
     {
