@@ -22,6 +22,7 @@ code: statement # 5 #
 statement: RETURNSTAT(expr) # 5 # bnode->reg = kids[0]->reg; emit("RETURN", bnode); freeReg(kids[0]->reg);
 expr: EXPR(expr) # 5 # bnode->reg=kids[0]->reg;
 expr: NOTEXPR(term) # 5 # bnode->reg=newReg(); emit("NOTEXPR", bnode); freeReg(kids[0]->reg);
+expr: NOTEXPR(expr) # 5 # bnode->reg=newReg(); emit("NOTEXPR", bnode); freeReg(kids[0]->reg);
 expr: MINUSEXPR(term) # 5 # bnode->reg=newReg(); emit("MINUSEXPR", bnode); freeReg(kids[0]->reg);
 expr: PLUSEXPR(term, term) # 5 # bnode->reg = newReg(); emit("PLUSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: PLUSEXPR(term, expr) # 5 # bnode->reg = newReg(); emit("PLUSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
@@ -114,13 +115,11 @@ void emit(const char* what, NODEPTR_TYPE bnode)
   {
     //-1 == TRUE und 0 == FALSE (Whyyyyyy)
     sprintf(codeBuffer,
-      "#LESSEXPR\n"
-      "push %%r15\n"
-      "test %2$s, %3$s \n"
-      "setl %%r15b\n"
-      "dec %%r15b\n"
-      "movsx %%r15b, %1$s\n"
-      "pop %%r15\n",
+      "#LESSEXPR %1$s := %3$s < %2$s\n"
+      "cmp %2$s, %3$s \n" // p3 < p2
+      "setl %%al\n" // true -> (rax = 1)
+      "neg %%al\n"
+      "movsx %%al, %1$s\n",
       regNames[bnode->reg], regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
   }
   else if(strcmp(what, "EQUALEXPR") == 0)
