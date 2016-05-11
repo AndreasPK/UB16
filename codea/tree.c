@@ -2,9 +2,9 @@
 #include <assert.h>
 
 
-const char* regNames[] = { /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
+const char* regNames[] = { /*immediate val*/ "%rax", /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
   /*general registers*/ "%r10", "%r11", "TooManyRegistersUsed", };
-#define REG_COUNT (8)
+#define REG_COUNT (9)
 
 ///Create a copy of the symbol list
 psymList symClone(psymList head)
@@ -88,7 +88,7 @@ struct regInfo* registers[REG_COUNT];
 
 int newReg()
 {
-  for(int i = 0; i < REG_COUNT; i++)
+  for(int i = 1; i < REG_COUNT; i++)
   {
     if(registers[i] == NULL)
     {
@@ -113,7 +113,7 @@ int newArgReg(void)
 
 void freeReg(int id)
 {
-  if(id == -1)
+  if(id == -1 || id == 0)
     return;
   if(registers[id]->is_argument) {
     //printf("Keeping argument in register.\n");
