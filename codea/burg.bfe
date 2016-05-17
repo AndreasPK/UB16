@@ -29,11 +29,13 @@ expr: OREXPR(term, expr) # 5 # bnode->reg = 0; emit("OREXPR", bnode); freeReg(ki
 expr: LESSEXPR(term, term) # 5 # bnode->reg = 0; emit("LESSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: EQUALEXPR(term, term) # 5 # bnode->reg = 0; emit("EQUALEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: READEXPR(term) # 5 # bnode->reg = 0; emit("READEXPR", bnode); freeReg(kids[0]->reg);
-expr: term # 1 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
+expr: term # 2 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
+expr: constant # 1 # bnode->reg = 0; printf("mov $%ld, %%rax \n ", kids[0]->value);
 term: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
-term: CONSTTERM # 5 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
+term: constant # 5 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
 term: FCALL # 5 # bnode->reg = newReg(); fprintf(stderr, "Error: Function call not supportet.\n");
 term: EXPRTERM(expr) # 5 # bnode->reg = newReg(); emit("EXPR2TERM", bnode);
+constant: CONSTTERM # 0 # //const nonterm
 statement: doexpr # 5 # fprintf(stderr, "DOSTAT: Do not supported.\n"); //printf("do stuff\n");
 doexpr: DOSTAT # 5 #fprintf(stderr, "Do not yet supported.\n");
 statement: VARASSIGN(memaddr, expr) # 5 # emit("MEMVARWRITE", bnode); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
@@ -42,11 +44,14 @@ statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg
 statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); emit("VARASSIGN", bnode); freeReg(kids[1]->reg);
 statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); freeReg(kids[0]->reg);
 statement: statement # 99 # /* Optimization rules below this */     fprintf(stderr, "Error, this should work just as comment\n");
-
+constant: PLUSEXPR(constant, constant) # 1 # bnode->value = kids[0]->value + kids[1]->value;
+constant: MULTEXPR(constant, constant) # 1 # bnode->value = kids[0]->value * kids[1]->value;
+constant: NOTEXPR(constant) # 1 # bnode->value = ~ kids[0]->value;
+constant: OREXPR(constant, constant) # 1 # bnode->value = kids[0]->value | kids[1]->value;
+constant: MINUSEXPR(constant) # 1 # bnode->value = - (kids[0]->value);
+constant: EQUALEXPR(constant, constant) # 1 # bnode->value = (kids[0]->value == kids[1]->value) ? (-1) : 0;
+constant: LESSEXPR(constant, constant) # 1 # bnode->value = (kids[0]->value < kids[1]->value) ? (-1) : 0;
 %%
-//reg: FUNCTION              # 1 # printf("Test I guess.\n");
-//reg: num                   # 5 # printf("Value: %d\n", bnode->value);
-//num: CONSTTERM             # 0
 
 char codeBuffer[2048];
 
