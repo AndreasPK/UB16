@@ -115,6 +115,7 @@ void emit(const char* what, NODEPTR_TYPE bnode)
     //-1 == TRUE und 0 == FALSE (Whyyyyyy)
     sprintf(codeBuffer,
       "#LESSEXPR %%rax := %2$s < %1$s\n"
+      "xor %%rax, %%rax\n"
       "cmp %1$s, %2$s \n" // p3 < p2
       "setl %%al\n" // true -> (rax = 1)
       "neg %%al\n"
@@ -126,8 +127,9 @@ void emit(const char* what, NODEPTR_TYPE bnode)
     //-1 == TRUE und 0 == FALSE (Whyyyyyy)
     sprintf(codeBuffer,
       "#EQUALEXPR\n"
-      "test %1$s, %2$s \n"
-      "setnz %%al\n"
+      "xor %%rax, %%rax\n"
+      "cmp %1$s, %2$s \n"
+      "setz %%al\n"
       "neg %%al\n"
       "movsx %%al, %%rax\n",
       regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
