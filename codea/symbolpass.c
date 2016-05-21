@@ -42,7 +42,7 @@ nodeptr updateAstSymbols(nodeptr tree)
     return tree;
   }
 
-  //Vor statement lists update left hand side, then transfer symbols to right side.
+  //For statement lists update left hand side, then transfer symbols to right side.
   if(tree->op == STATS)
   {
     assert(tree->children[0] != NULL);
@@ -92,30 +92,38 @@ nodeptr updateAstSymbols(nodeptr tree)
     }
   }
 
+  //Do Statement check
   if(tree->op == DOSTAT)
   {
-    //Empty do statement.
-    if(tree->children[0] == NULL)
-      return tree;
-    //Labeled statement, add name to symbols.
-    if(tree->name != NULL)
-    {
+    psymList s;
+    //If a label was provided check availability.
+    if(tree->name != NULL) {
       psymList s = symFind(tree->symbols, tree->name);
       if(s != NULL) {
         fprintf(stderr, "Can't define label %s, already defined with type %d", s->name, s->type);
         exit(3);
       }
+
+      //Empty do statement. Dont update children.
+      if(tree->children[0] == NULL)
+        return tree;
+
+      //Allocate a new symbol table containing the label.
       s = (psymList) malloc(sizeof *s);
       memset(s, 0, sizeof(*s));
       s->name = tree->name;
       s->type = ST_LABEL;
       s->reg = 666;
       s->next = tree->symbols;
+
+      //Update symbol table for child nodes.
       tree->children[0]->symbols = s;
     }
+    //Unnamed do blocks reuse the parents symbol table.
     else
     {
-      tree->children[0]->symbols = tree->symbols;
+      if(tree->children[0] != NULL)
+        tree->children[0]->symbols = tree->symbols;
     }
     updateAstSymbols(tree->children[0]);
     return tree;
