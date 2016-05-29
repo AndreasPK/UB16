@@ -1,8 +1,8 @@
-#include "tree.h"
+#include "passes.h"
 
-
-//Updates the symbol table of an argument subtree
+//Updates the symbol table of an subtree
 nodeptr updateArguments(nodeptr arg);
+
 int getNextReg(psymList list);
 
 void symPrint(psymList s)
@@ -14,12 +14,12 @@ void symPrint(psymList s)
     }
 }
 
+//Set symbol tables correctly for each node
 nodeptr updateAstSymbols(nodeptr tree)
 {
   //Empty tree is empty.
   if(tree == NULL)
     return NULL;
-
 
   //For a function create first parse argument symbols.
   if(tree->op == FUNCTION)
@@ -76,7 +76,7 @@ nodeptr updateAstSymbols(nodeptr tree)
     s = malloc(sizeof *s);
     s->name = tree->name;
     s->type = ST_VAR;
-    s->reg = getNextReg(tree->symbols);
+    //s->reg = getNextReg(tree->symbols);
     s->next = tree->symbols;
     tree->symbols = s;
     return tree;

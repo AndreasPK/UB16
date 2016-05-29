@@ -1,7 +1,7 @@
 #ifndef _OX_ATTR_TYPES
 #define _OX_ATTR_TYPES
 
-#include "tree.h"
+#include "passes.h"
 
 #define T_NAME     char*
 #define T_SIN      struct symT*

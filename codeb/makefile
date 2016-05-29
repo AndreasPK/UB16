@@ -1,7 +1,7 @@
 AS_OPTS = -c
 C_OPTS= -std=gnu99 -g -DUSE_IBURG -DBURM
 DEBUG_PARSER = --debug
-NAME = codea
+NAME = codeb
 
 all: $(NAME)
 
@@ -17,19 +17,19 @@ parser.o: grammar.c
 lexer.o: lexer.c grammar.h
 	gcc $(C_OPTS) -c $<
 
+passes.o: passes.c passes.h
+	gcc $(C_OPTS) -c $<
+
 burg.c: burg.bfe
 	bfe < $< | iburg > $@
 
 burg.o: burg.c
 	gcc -c $(C_OPTS) -D_BURM_WTF $< -o $@
 
-tree.o: tree.c tree.h
+symbolpass.o: symbolpass.c passes.h
 	gcc $(C_OPTS) -c $< -o $@
 
-symbolpass.o: symbolpass.c tree.h
-	gcc $(C_OPTS) -c $< -o $@
-
-$(NAME): tree.o parser.o lexer.o burg.o symbolpass.o
+$(NAME): passes.o parser.o lexer.o burg.o symbolpass.o
 	gcc $(C_OPTS) $^ -o $@
 
 grammar.ox: grammar.y
@@ -49,7 +49,7 @@ testAsm: $(NAME) testFile
 	./test; echo Returned: $$?
 
 clean:
-	rm *.o grammar.h grammar.c lexer.c burg.c
-	rm $(NAME)
-	rm grammar.output
-	rm oxout*
+	rm *.o grammar.h grammar.c lexer.c burg.c -f
+	rm $(NAME) -f
+	rm grammar.output -f
+	rm oxout* -f

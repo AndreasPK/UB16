@@ -20,6 +20,7 @@ typedef struct symList
 {
   struct symList *next;
   const char* name; //Name of the variable
+  int ssaID;
   int reg; //Register index the variable is stored in.
   int type; //Label or Variable
 
@@ -59,6 +60,8 @@ enum {
   LASTARG,
   EXPR,
   ADDRWRITE,
+  CONT,
+  BRK,
 };
 
 ///AST-Node
@@ -76,14 +79,16 @@ typedef struct tNode
     const char* name;
     long int value;
   };
-  int reg; //Register for immediate value.
+  int reg; //Register for result/immediate value.
+  long int ssaID;
+  int blockID;
 
 }* nodeptr;
 
 typedef struct tNode tNode;
 
 nodeptr newNode(int op);
-nodeptr newArgNode(const char* name);
+nodeptr newArgNode(const char* name); //Create a new parameter node.
 nodeptr newChildNode(int op, nodeptr left, nodeptr righ);
 
 
@@ -112,8 +117,20 @@ void clearReg();
 #define STATE_LABEL(p) ((p)->state)
 #define PANIC          printf
 
+//Called with function node, enumerates unique block id's
+void assignBlock(NODEPTR_TYPE node, int blockID);
+
 void createProgramCode(NODEPTR_TYPE statements);
 void invoke_burm(NODEPTR_TYPE root);
 
+int runCompilerPasses(NODEPTR_TYPE root);
+
+//Assign a id for a storable term.
+long int assignSSA(NODEPTR_TYPE node);
+int mapSSA(NODEPTR_TYPE node);
+void freeSSA(NODEPTR_TYPE node);
+void clearSSAMapping(void);
+
+int assignBlocks(NODEPTR_TYPE root);
 
 #endif

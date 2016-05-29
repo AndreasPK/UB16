@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "tree.h"
+#include "passes.h"
+
+long int ssaID = 0;
 
 %}
 
@@ -11,11 +13,11 @@
 %term ARG=1 FUNCTION=2 NOOP=3 RETURNSTAT=4 DOSTAT=5 VARDEF=6 VARASSIGN=7 TERMSTAT=8 STATS=9
 %term EXPRTERM=10 CONSTTERM=11 CALLTERM=12 VARTERM=13 LESSEXPR=14 READEXPR=15 EQUALEXPR=16
 %term OREXPR=17 MULTEXPR=18 PLUSEXPR=19 MINUSEXPR=20 NOTEXPR=21 VARUSE=22 GUARDEDLIST=23
-%term GUARDED=24 FCALL=25 ARGEXPR=26 LASTARG=27 EXPR=28 ADDRWRITE=29
+%term GUARDED=24 FCALL=25 ARGEXPR=26 LASTARG=27 EXPR=28 ADDRWRITE=29 MAYBE=30 BREAK=31
 
 %%
 
-code: FUNCTION(arguments)           # 5 # allocateParams(bnode->symbols); emit("FUNCTION", bnode);
+code: FUNCTION(arguments)           # 5 # /*allocateParams(bnode->symbols);*/ emit("FUNCTION", bnode);
 arguments: LASTARG                 # 5 # clearReg();
 arguments: ARG(arguments)          # 5 #
 code: statement # 5 #
@@ -23,13 +25,13 @@ statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode);
 expr: EXPR(expr) # 5 # bnode->reg=0;
 expr: NOTEXPR(expr) # 5 # bnode->reg=0; emit("NOTEXPR", bnode);
 expr: MINUSEXPR(expr) # 5 # bnode->reg=0; emit("MINUSEXPR", bnode);
-expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); freeReg(kids[0]->reg);
+expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); //freeReg(kids[0]->reg);
 expr: MULTEXPR(term, expr) # 5 # bnode->reg = 0; emit("MULTEXPR", bnode); freeReg(kids[0]->reg);
 expr: OREXPR(term, expr) # 5 # bnode->reg = 0; emit("OREXPR", bnode); freeReg(kids[0]->reg);
 expr: LESSEXPR(term, term) # 5 # bnode->reg = 0; emit("LESSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: EQUALEXPR(term, term) # 5 # bnode->reg = 0; emit("EQUALEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: READEXPR(term) # 5 # bnode->reg = 0; emit("READEXPR", bnode); freeReg(kids[0]->reg);
-expr: term # 2 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
+expr: term # 2 # emit("TERM2EXPR", bnode); //freeReg(kids[0]->reg);
 expr: constant # 1 # bnode->reg = 0; printf("mov $%ld, %%rax \n ", kids[0]->value);
 term: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
 term: constant # 5 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
@@ -42,7 +44,7 @@ statement: VARASSIGN(memaddr, expr) # 5 # emit("MEMVARWRITE", bnode); freeReg(ki
 memaddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
 statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); bnode->reg=ts->reg; emit("VARDEF", bnode); freeReg(kids[0]->reg);
 statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); emit("VARASSIGN", bnode); freeReg(kids[1]->reg);
-statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); freeReg(kids[0]->reg);
+statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); //freeReg(kids[0]->reg);
 statement: statement # 99 # /* Optimization rules below this */     fprintf(stderr, "Error, this should work just as comment\n");
 constant: PLUSEXPR(constant, constant) # 1 # bnode->value = kids[0]->value + kids[1]->value;
 constant: MULTEXPR(constant, constant) # 1 # bnode->value = kids[0]->value * kids[1]->value;
@@ -55,14 +57,6 @@ constant: LESSEXPR(constant, constant) # 1 # bnode->value = (kids[0]->value < ki
 
 char codeBuffer[2048];
 
-
-//Wasts memory but fuckid
-
-char* asm_mv(char* buf, int from, int to)
-{
-  sprintf(buf, "#%s := %s\nmovq %s, %s\n", regNames[to], regNames[from], regNames[from], regNames[to]);
-  return buf;
-}
 
 void emit(const char* what, NODEPTR_TYPE bnode)
 {
@@ -206,7 +200,6 @@ void emit(const char* what, NODEPTR_TYPE bnode)
     return;
   }
 
-
   puts(codeBuffer);
 }
 
@@ -219,7 +212,7 @@ int getRegNumber(psymList list, const char* name)
   return symFind(list, name)->reg;
 }
 
-void allocateParams(psymList par)
+/*void allocateParams(psymList par)
 {
   if(par == NULL)
     return;
@@ -227,7 +220,7 @@ void allocateParams(psymList par)
   int i = newArgReg();
   par->reg = i;
   //printf("r%d = arg %s\n", i, par->name);
-}
+}*/
 
 void invoke_burm(NODEPTR_TYPE root) {
 	burm_label(root);
