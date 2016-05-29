@@ -5,6 +5,12 @@
 
 #include "passes.h"
 
+/*
+  An expression always results in a value stored in rax.
+  An term is similar to an expression but can store it's value in an arbitrary register.
+  A constant is .. a constant. It can only be used by loading it's value. (Either as term or expression)
+*/
+
 long int ssaID = 0;
 
 %}
@@ -16,36 +22,39 @@ long int ssaID = 0;
 %term GUARDED=24 FCALL=25 ARGEXPR=26 LASTARG=27 EXPR=28 ADDRWRITE=29 MAYBE=30 BREAK=31
 
 %%
-
-code: FUNCTION(arguments)           # 5 # /*allocateParams(bnode->symbols);*/ emit("FUNCTION", bnode);
-arguments: LASTARG                 # 5 # clearReg();
-arguments: ARG(arguments)          # 5 #
-code: statement # 5 #
+code: FUNCTION(arguments)           # 5 # emit("FUNCTION", bnode);
+arguments: LASTARG                  # 5 #
+arguments: ARG(arguments)           # 5 #
+code: statement                     # 5 #
 statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode);
+variable: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
+term: variable # 15 # bnode->arg1.l = bnode->reg; bnode->reg = newReg(); emit("VAR2TERM", bnode);
+expr: variable # 5 # bnode->arg1.l = bnode->reg; emit("VAR2EXPR", bnode);
 expr: EXPR(expr) # 5 # bnode->reg=0;
 expr: NOTEXPR(expr) # 5 # bnode->reg=0; emit("NOTEXPR", bnode);
 expr: MINUSEXPR(expr) # 5 # bnode->reg=0; emit("MINUSEXPR", bnode);
-expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); //freeReg(kids[0]->reg);
+expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); freeReg(kids[0]->reg);
 expr: MULTEXPR(term, expr) # 5 # bnode->reg = 0; emit("MULTEXPR", bnode); freeReg(kids[0]->reg);
 expr: OREXPR(term, expr) # 5 # bnode->reg = 0; emit("OREXPR", bnode); freeReg(kids[0]->reg);
 expr: LESSEXPR(term, term) # 5 # bnode->reg = 0; emit("LESSEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: EQUALEXPR(term, term) # 5 # bnode->reg = 0; emit("EQUALEXPR", bnode); freeReg(kids[0]->reg); freeReg(kids[1]->reg);
 expr: READEXPR(term) # 5 # bnode->reg = 0; emit("READEXPR", bnode); freeReg(kids[0]->reg);
-expr: term # 2 # emit("TERM2EXPR", bnode); //freeReg(kids[0]->reg);
+expr: term # 2 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
 expr: constant # 1 # bnode->reg = 0; printf("mov $%ld, %%rax \n ", kids[0]->value);
-term: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
 term: constant # 5 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
 term: FCALL # 5 # bnode->reg = newReg(); fprintf(stderr, "Error: Function call not supportet.\n");
 term: EXPRTERM(expr) # 5 # bnode->reg = newReg(); emit("EXPR2TERM", bnode);
 constant: CONSTTERM # 0 # //const nonterm
 statement: doexpr # 5 # fprintf(stderr, "DOSTAT: Do not supported.\n"); //printf("do stuff\n");
 doexpr: DOSTAT # 5 #fprintf(stderr, "Do not yet supported.\n");
-statement: VARASSIGN(memaddr, expr) # 5 # emit("MEMVARWRITE", bnode); freeReg(kids[1]->reg); freeReg(kids[0]->reg);
-memaddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
-statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); bnode->reg=ts->reg; emit("VARDEF", bnode); freeReg(kids[0]->reg);
-statement: VARASSIGN(VARUSE, expr) # 5 # ts = symFind(bnode->symbols, kids[0]->name); emit("VARASSIGN", bnode); freeReg(kids[1]->reg);
-statement: term # 5 # printf("Free used reg and shit (statement: term).\n"); //freeReg(kids[0]->reg);
-statement: statement # 99 # /* Optimization rules below this */     fprintf(stderr, "Error, this should work just as comment\n");
+statement: VARASSIGN(variable, expr) # 5 # emit("VARASSIGN", bnode);
+statement: VARASSIGN(taddr, expr) # 5 # bnode->reg = kids[0]->reg; emit("MEMVARWRITE", bnode); freeReg(kids[0]->reg);
+statement: VARASSIGN(vaddr, expr) # 3 # bnode->reg = kids[0]->reg; emit("MEMVARWRITE", bnode);
+taddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
+vaddr: ADDRWRITE(variable) # 5 # bnode->reg = kids[0]->reg;
+statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); bnode->reg=ts->reg; emit("VARDEF", bnode);
+statement: TERMSTAT(term) # 5 # freeReg(kids[0]->reg);
+statement: statement # 99 # /* Optimization rules below this */     fprintf(stderr, "Error, this should work just as comment\n"); exit(4);
 constant: PLUSEXPR(constant, constant) # 1 # bnode->value = kids[0]->value + kids[1]->value;
 constant: MULTEXPR(constant, constant) # 1 # bnode->value = kids[0]->value * kids[1]->value;
 constant: NOTEXPR(constant) # 1 # bnode->value = ~ kids[0]->value;
@@ -57,16 +66,34 @@ constant: LESSEXPR(constant, constant) # 1 # bnode->value = (kids[0]->value < ki
 
 char codeBuffer[2048];
 
-
-void emit(const char* what, NODEPTR_TYPE bnode)
+void defVar(NODEPTR_TYPE bnode)
 {
-  static char mv1[512];
-  static char mv2[512];
-  static char mv3[512];
+  assignSSA(bnode);
+  mapSSA(bnode);
+}
 
+void emit(const char* what, NODEPTR_TYPE bnode )
+{
   if(strcmp(what, "FUNCTION") == 0)
   {
     sprintf(codeBuffer, ".global %s\n%s:\n\n", bnode->name, bnode->name);
+  }
+  //Register of the variable is storeg in arg1, reg contains target register.
+  else if(strcmp(what, "VAR2TERM") == 0)
+  {
+    sprintf(codeBuffer,
+    "#VAR2TERM\n"
+    "movq %1$s, %2$s\n",
+    regNames[bnode->arg1.l], regNames[bnode->reg]
+    );
+  }
+  else if(strcmp(what, "VAR2EXPR") == 0)
+  {
+    sprintf(codeBuffer,
+    "#VAR2EXPR\n"
+    "movq %1$s, %%rax\n",
+    regNames[bnode->arg1.l]
+    );
   }
   else if(strcmp(what, "RETURN") == 0)
   {
