@@ -63,6 +63,8 @@ constant: OREXPR(constant, constant) # 0 # bnode->value = kids[0]->value | kids[
 constant: MINUSEXPR(constant) # 0 # bnode->value = - (kids[0]->value);
 constant: EQUALEXPR(constant, constant) # 0 # bnode->value = (kids[0]->value == kids[1]->value) ? (-1) : 0;
 constant: LESSEXPR(constant, constant) # 0 # bnode->value = (kids[0]->value < kids[1]->value) ? (-1) : 0;
+term: PLUSEXPR(term, constant) # 2 # bnode->reg = kids[0]->reg; printf("addq $%ld, %s\n", kids[1]->value, regNames[kids[0]->reg]);
+expr: PLUSEXPR(variable, expr) # 1 # bnode->reg = 0; printf("addq %s, %%rax\n", regNames[kids[0]->reg]);
 %%
 
 char codeBuffer[2048];

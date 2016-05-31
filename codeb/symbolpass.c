@@ -14,7 +14,7 @@ void symPrint(psymList s)
     }
 }
 
-//Set symbol tables correctly for each node
+//Set symbol tables correctly for each node. Returns the processed node.
 nodeptr updateAstSymbols(nodeptr tree)
 {
   //Empty tree is empty.
@@ -42,18 +42,24 @@ nodeptr updateAstSymbols(nodeptr tree)
     return tree;
   }
 
-  //For statement lists update left hand side, then transfer symbols to right side.
+  //For statement lists update left(stat) hand side, then transfer symbols to right(stats) side.
   if(tree->op == STATS)
   {
     assert(tree->children[0] != NULL);
+
+    //Propagate symbols to stat
     tree->children[0]->symbols = tree->symbols;
-    //Update statement symbols based on current node
+
+    //Update stat symbols(eventually adding new ones or throwing an error)
     nodeptr res = updateAstSymbols(tree->children[0]);
 
     //If there are following statements use update symbol list for those.
     if(tree->children[1] != NULL)
     {
-      tree->children[1]->symbols = res->symbols;
+      if(tree->children[0]->op != DOSTAT)
+        tree->children[1]->symbols = tree->children[0]->symbols;
+      else
+        tree->children[1]->symbols = tree->symbols;
       updateAstSymbols(tree->children[1]);
     }
     return tree;
@@ -111,9 +117,7 @@ nodeptr updateAstSymbols(nodeptr tree)
       memset(s, 0, sizeof(*s));
       s->name = name;
       s->type = ST_LABEL;
-      s->reg = 666;
       s->next = tree->symbols;
-      //We don't clean up labels when leaving a block so don't care about block id
 
       //Update symbol table for child nodes.
       tree->symbols = s;
