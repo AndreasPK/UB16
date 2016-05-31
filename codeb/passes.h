@@ -88,6 +88,7 @@ typedef struct tNode
       };
       const char* name; //Label name or NULL
       int guardID; //Guard ID for guards.
+      int guardType; //BRK or CONT
     } dostat;
   };
   int reg; //Register for result/immediate value.

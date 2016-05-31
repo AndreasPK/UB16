@@ -243,6 +243,14 @@ void generateDoStat(NODEPTR_TYPE dostat)
     condition->dostat.guardID = guarded->dostat.guardID;
     invoke_burm(condition);
     generateBlock(stats);
+    if(guarded->dostat.guardType == BRK)
+    {
+      printf("#BREAK\njmp %s_end\n", label);
+    }
+    else if(guarded->dostat.guardType == CONT)
+    {
+      printf("#CONTINUE\njmp %s_start\n", label);
+    }
     printf("end_guard_%d:\n", guarded->dostat.guardID);
 
   }

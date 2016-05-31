@@ -72,7 +72,7 @@ preexpr : NOT preexpr
           @}
         | term
           @{
-              @i @preexpr.ast@ = newChildNode(EXPR, @term.ast@, NULL);
+              @i @preexpr.ast@ = @term.ast@;
           @}
         ;
 lexpr : ID
@@ -125,6 +125,7 @@ guarded : expr ARROWR stats CONTINUE maybeid
   newChildNode(CONDITION, @expr.ast@, NULL),
  @stats.ast@);
 @guarded.ast@->dostat.name = @maybeid.name@;
+@guarded.ast@->dostat.guardType = CONT;;
           @}
         | expr ARROWR stats BREAK maybeid
           @{
@@ -133,6 +134,7 @@ guarded : expr ARROWR stats CONTINUE maybeid
   newChildNode(CONDITION, @expr.ast@, NULL),
  @stats.ast@);
 @guarded.ast@->dostat.name = @maybeid.name@;
+@guarded.ast@->dostat.guardType = BRK;;
           @}
         ;
 dostat : ID COLON DO guardedlist END

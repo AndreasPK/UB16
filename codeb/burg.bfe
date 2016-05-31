@@ -33,10 +33,8 @@ statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode);
 variable: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
 term: variable # 15 # bnode->arg1.l = bnode->reg; bnode->reg = newReg(); emit("VAR2TERM", bnode);
 expr: variable # 5 # bnode->arg1.l = bnode->reg; emit("VAR2EXPR", bnode);
-expr: EXPR(expr) # 5 # bnode->reg=0;
 expr: NOTEXPR(expr) # 5 # bnode->reg=0; emit("NOTEXPR", bnode);
 expr: MINUSEXPR(expr) # 99 # bnode->reg=0; emit("MINUSEXPR", bnode);
-expr: MINUSEXPR(constant) # 1 # printf("bla\n");
 expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); freeReg(kids[0]->reg);
 expr: MULTEXPR(term, expr) # 5 # bnode->reg = 0; emit("MULTEXPR", bnode); freeReg(kids[0]->reg);
 expr: OREXPR(term, expr) # 5 # bnode->reg = 0; emit("OREXPR", bnode); freeReg(kids[0]->reg);
@@ -86,7 +84,7 @@ void emit(const char* what, NODEPTR_TYPE bnode )
     sprintf(codeBuffer,
       "#GUARD JMP\n"
       "cmp $0, %%rax\n"
-      "jl end_guard_%d\n", bnode->dostat.guardID);
+      "jge end_guard_%d\n", bnode->dostat.guardID);
   }
   else if(strcmp(what, "DOSTAT") == 0)
   {
