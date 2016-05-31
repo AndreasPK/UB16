@@ -220,9 +220,12 @@ void generateDoStat(NODEPTR_TYPE dostat)
   if(name != NULL)
   {
     asprintf(&label, "do_%s_%d", name, dostat->dostat.labelID);
+    psymList s = symFind(dostat->symbols, name);
+    s->labelID = dostat->dostat.labelID;
   }
   else
     asprintf(&label, "do_%d", dostat->dostat.labelID);
+
 
   //Start label
   printf("%s_start:\n", label);
@@ -243,13 +246,23 @@ void generateDoStat(NODEPTR_TYPE dostat)
     condition->dostat.guardID = guarded->dostat.guardID;
     invoke_burm(condition);
     generateBlock(stats);
+
+    const char* name = guarded->dostat.name;
+    char* targetLabel;
+    if(name == NULL)
+      targetLabel = label;
+    else
+    {
+      psymList s = symFind(guarded->symbols, name);
+      asprintf(&targetLabel, "do_%s_%d", name, s->labelID);
+    }
     if(guarded->dostat.guardType == BRK)
     {
-      printf("#BREAK\njmp %s_end\n", label);
+      printf("#BREAK\njmp %s_end\n", targetLabel);
     }
     else if(guarded->dostat.guardType == CONT)
     {
-      printf("#CONTINUE\njmp %s_start\n", label);
+      printf("#CONTINUE\njmp %s_start\n", targetLabel);
     }
     printf("end_guard_%d:\n", guarded->dostat.guardID);
 

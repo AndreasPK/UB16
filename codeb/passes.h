@@ -21,7 +21,10 @@ typedef struct symList
   struct symList *next;
   const char* name; //Name of the variable
   int ssaID;
-  int reg; //Register index the variable is stored in.
+  union {
+    int reg; //Register index the variable is stored in.
+    int labelID;
+  };
   int type; //Label or Variable
   int blockID; //Origin block. Invalid after leaving of this block.
 

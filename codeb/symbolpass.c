@@ -116,6 +116,7 @@ nodeptr updateAstSymbols(nodeptr tree)
       //We don't clean up labels when leaving a block so don't care about block id
 
       //Update symbol table for child nodes.
+      tree->symbols = s;
       tree->children[0]->symbols = s;
     }
     //Unnamed do blocks reuse the parents symbol table.
