@@ -1,7 +1,0 @@
-// Tests the arithmetic elements.
-
-main(a)
-  return 15;
-//    var y := (-((-((-a) * 0x04)) + 1)) * (-1);
-//    return 0=0;
-end;

@@ -1,22 +1,23 @@
 #include "passes.h"
 #include <assert.h>
-
+#include <stdio.h>
 
 const char* regNames[] = { /*immediate val*/ "%rax", /*parameters*/ "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
-  /*general registers*/ "%r10", "%r11", "TooManyRegistersUsed", };
-#define REG_COUNT (9)
+  /*general registers*/ "%r10", "%r11", "T9", "T10", "T11", "T12", "T13" };
+#define REG_COUNT (13)
+
 
 //Called on each function node.
 int runCompilerPasses(NODEPTR_TYPE root)
 {
   //Assign block ids:
-  assignBlock(root, -1000); //Block id argument is ignored at function node
+  assignBlock(root); //Block id argument is ignored at function node
 
   //Create and verify symbol tables.
+  //Adjust symbol block information
   updateAstSymbols(root);
 
   //Reserve argument ids.
-  //Reserve registers for arguments.
   clearReg();
   NODEPTR_TYPE arg = root->children[0];
   while(arg != NULL && arg->op != LASTARG)
@@ -26,17 +27,19 @@ int runCompilerPasses(NODEPTR_TYPE root)
     psymList s = symFind(arg->symbols, arg->name);
     s->reg = arg->reg;
     s->ssaID = arg->ssaID;
-    fprintf(stderr, "Assigned par %s to ssa:%ld reg:%d \n", arg->name, s->ssaID, s->reg);
+    s->blockID = arg->blockID;
+    //fprintf(stderr, "Assigned par %s to ssa:%ld reg:%d(%s) \n", arg->name, s->ssaID, s->reg, regNames[s->reg]);
     arg = arg->children[0];
   }
   assert(arg == NULL || arg->op == LASTARG);
 
 
-  //Generate code for this function. (Function label & argument reserving)
+  //Generate code for this function. (Function label)
   invoke_burm(root);
 
   //Run codegen for Function statements.
-  createProgramCode(root->children[1]);
+  generateBlock(root->children[1]);
+  puts("#Default return:\nret");
 }
 
 ///Create a copy of the symbol list
@@ -78,6 +81,7 @@ psymList symAdd(const psymList head, const psymList symbol)
 
 psymList symFind(const psymList head, const char* name)
 {
+  assert(name != NULL);
   psymList index = head;
   while(index != NULL)
   {
@@ -168,25 +172,92 @@ void clearReg()
   memset(registers, 0, sizeof(registers));
 }
 
-void createProgramCode(NODEPTR_TYPE statements)
+//Walk the tree of stats, invoking burg for each statement.
+//Called on the STATS node.
+void generateBlock(NODEPTR_TYPE statements)
 {
   if(statements == NULL)
     return;
 
-  if(statements->children[0] != NULL)
-    invoke_burm(statements->children[0]);
+  NODEPTR_TYPE stat = statements->children[0];
+  //Invoke burm for each statement.
+  if(stat != NULL)
+  {
 
-  createProgramCode(statements->children[1]);
+    //Dostat special casing.
+    if(stat->op == DOSTAT)
+    {
+      generateDoStat(stat);
+    }
+    else
+    {
+      //Generate code for this statement.
+      invoke_burm(stat);
+    }
+  }
+
+  NODEPTR_TYPE right = statements->children[1];
+  if(right != NULL) {
+    generateBlock(statements->children[1]);
+  }
+  else //right == NULL
+  { //Last statement in block reached so free block specific registers.
+    freeBlockSSA(statements);//Free variables of this block.
+  }
 }
 
+int guardID = 0;
+int labelID = 0;
+
+//Generate code for a do block
+void generateDoStat(NODEPTR_TYPE dostat)
+{
+  assert(dostat->op == DOSTAT);
+
+  char* label;
+  const char* name = dostat->dostat.name;
+  dostat->dostat.labelID = ++labelID;
+  if(name != NULL)
+  {
+    asprintf(&label, "do_%s_%d", name, dostat->dostat.labelID);
+  }
+  else
+    asprintf(&label, "do_%d", dostat->dostat.labelID);
+
+  //Start label
+  printf("%s_start:\n", label);
+
+  assert(dostat->children[0] != NULL);
+
+  //Generate code for each guard statement
+  for(NODEPTR_TYPE guardedlist = dostat->children[0]; guardedlist->op != ENDGUARD; guardedlist = guardedlist->children[1] )
+  {
+    /* Create the conditional jump followed by the code block terminated by the end guard label.
+     * */
+    NODEPTR_TYPE guarded = guardedlist->children[0];
+    NODEPTR_TYPE condition = guarded->children[0];
+    assert(condition->op == CONDITION);
+    NODEPTR_TYPE stats = guarded->children[1];
+
+    guarded->dostat.guardID = ++guardID;
+    condition->dostat.guardID = guarded->dostat.guardID;
+    invoke_burm(condition);
+    generateBlock(stats);
+    printf("end_guard_%d:\n", guarded->dostat.guardID);
+
+  }
+
+  printf("%s_end:\n", label);
+}
 
 /**
- * Single static assignment infrastructure. We can:
+ * assignment infrastructure. We can:
  * * Assign an id to a node.
  * * Map a nodes id to a register.
  * * Free a nodes register.
  *
  * Methods get called by burg while traversing the tree.
+ * Basically not usefuel in how we actually allocate registers here, mistakes were made ....
  * */
 long int ssaID;
 
@@ -197,6 +268,23 @@ typedef struct ssaMapping{
 }* pRegMap;
 
 pRegMap ssaMappings = NULL;
+
+//For each symbol defined in the nodes block free it's register.
+void freeBlockSSA(NODEPTR_TYPE bnode)
+{
+  psymList s;
+  s = bnode->symbols;
+  while(1)
+  {
+    if(s == NULL)
+      return;
+    if(s->blockID == bnode->blockID)
+    {
+      freeReg(s->reg);
+    }
+    s = s->next;
+  }
+}
 
 int mapSSA(NODEPTR_TYPE node)
 {
@@ -255,7 +343,6 @@ void freeSSA(NODEPTR_TYPE node)
     return;
   }
   assert(0);
-
 }
 
 void clearSSAMapping()
@@ -281,57 +368,34 @@ long int assignSSA(NODEPTR_TYPE node)
 
 int blockID = 0;
 
-void assignBlock(NODEPTR_TYPE node, int blockID)
+void assignBlock(NODEPTR_TYPE node)
 {
   if(node == NULL)
     return;
 
   switch(node->op)
   {
-    case ARG: //Defines an argument (by name).
-      assignBlock(LEFT_CHILD(node), blockID);
-      break;
-    case FUNCTION: 
+    case FUNCTION:
       node->blockID = ++blockID;
-      assignBlock(LEFT_CHILD(node), node->blockID);
-      assignBlock(RIGHT_CHILD(node), node->blockID);
       break;
     case NOOP:
       assert(0);
       break;
-    //case DOSTAT:
-    //case VARDEF: default
-    //default case VARASSIGN,
-    //default case TERMSTAT,
-    //default case STATS,
-    //default case EXPRTERM,
-    //default case CONSTTERM,
-    //default case CALLTERM,
-    //default case VARTERM,
-    //default case LESSEXPR,
-    //default case READEXPR,
-    //default case EQUALEXPR,
-    //default case OREXPR,
-    //default case MULTEXPR,
-    //default case PLUSEXPR,
-    //default case MINUSEXPR,
-    //default case NOTEXPR,
-    //default case VARUSE,
     case GUARDEDLIST:
       node->blockID = ++blockID;
-      assignBlock(LEFT_CHILD(node), node->blockID);
-      assignBlock(RIGHT_CHILD(node), node->blockID);
       break;
-    //default case GUARDED,
-    //default case FCALL,
-    //default case ARGEXPR,
-    //default case LASTARG,
-    //default case EXPR,
-    //default case ADDRWRITE,
     default:
-      assignBlock(LEFT_CHILD(node), node->blockID);
-      assignBlock(RIGHT_CHILD(node), node->blockID);
       break;
+  }
+  if(LEFT_CHILD(node))
+  {
+    LEFT_CHILD(node)->blockID = node->blockID;
+    assignBlock(LEFT_CHILD(node));
+  }
+  if(RIGHT_CHILD(node))
+  {
+    RIGHT_CHILD(node)->blockID = node->blockID;
+    assignBlock(RIGHT_CHILD(node));
   }
 
 }

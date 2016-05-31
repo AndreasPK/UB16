@@ -1,5 +1,5 @@
 AS_OPTS = -c
-C_OPTS= -std=gnu99 -g -DUSE_IBURG -DBURM
+C_OPTS= -std=gnu99 -D_GNU_SOURCE -g -DUSE_IBURG -DBURM
 DEBUG_PARSER = --debug
 NAME = codeb
 

@@ -76,6 +76,7 @@ nodeptr updateAstSymbols(nodeptr tree)
     s = malloc(sizeof *s);
     s->name = tree->name;
     s->type = ST_VAR;
+    s->blockID = tree->blockID;
     //s->reg = getNextReg(tree->symbols);
     s->next = tree->symbols;
     tree->symbols = s;
@@ -96,25 +97,23 @@ nodeptr updateAstSymbols(nodeptr tree)
   if(tree->op == DOSTAT)
   {
     psymList s;
+    const char* name = tree->dostat.name;
     //If a label was provided check availability.
-    if(tree->name != NULL) {
-      psymList s = symFind(tree->symbols, tree->name);
+    if(name != NULL) {
+      psymList s = symFind(tree->symbols, name);
       if(s != NULL) {
         fprintf(stderr, "Can't define label %s, already defined with type %d", s->name, s->type);
         exit(3);
       }
 
-      //Empty do statement. Dont update children.
-      if(tree->children[0] == NULL)
-        return tree;
-
       //Allocate a new symbol table containing the label.
       s = (psymList) malloc(sizeof *s);
       memset(s, 0, sizeof(*s));
-      s->name = tree->name;
+      s->name = name;
       s->type = ST_LABEL;
       s->reg = 666;
       s->next = tree->symbols;
+      //We don't clean up labels when leaving a block so don't care about block id
 
       //Update symbol table for child nodes.
       tree->children[0]->symbols = s;
@@ -129,12 +128,12 @@ nodeptr updateAstSymbols(nodeptr tree)
     return tree;
   }
 
-  if(tree->op == GUARDED && tree->name != NULL)
+  if(tree->op == GUARDED && tree->dostat.name != NULL)
   {
-      psymList s = symFind(tree->symbols, tree->name);
+      psymList s = symFind(tree->symbols, tree->dostat.name);
       if(s == NULL)
       {
-        fprintf(stderr, "Error, label %s not defined.\n", tree->name);
+        fprintf(stderr, "Error, label %s not defined.\n", tree->dostat.name);
         exit(3);
       }
   }

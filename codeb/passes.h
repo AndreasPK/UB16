@@ -23,6 +23,7 @@ typedef struct symList
   int ssaID;
   int reg; //Register index the variable is stored in.
   int type; //Label or Variable
+  int blockID; //Origin block. Invalid after leaving of this block.
 
   //Variable attributes
 }* psymList;
@@ -40,7 +41,7 @@ enum {
   VARASSIGN,
   TERMSTAT,
   STATS,
-  EXPRTERM,
+  EXPRTERM, //10
   CONSTTERM,
   CALLTERM,
   VARTERM,
@@ -50,7 +51,7 @@ enum {
   OREXPR,
   MULTEXPR,
   PLUSEXPR,
-  MINUSEXPR,
+  MINUSEXPR, //20
   NOTEXPR,
   VARUSE,
   GUARDEDLIST,
@@ -60,8 +61,10 @@ enum {
   LASTARG,
   EXPR,
   ADDRWRITE,
-  CONT,
+  CONT, //30
   BRK,
+  ENDGUARD,
+  CONDITION,
 };
 
 ///AST-Node
@@ -78,8 +81,25 @@ typedef struct tNode
   union {
     const char* name;
     long int value;
+    struct { //Do stat related information
+      union { //Either label ID for dostat or reference to surrounding dostats.
+        int labelID;
+        struct tNode* doStat;
+      };
+      const char* name; //Label name or NULL
+      int guardID; //Guard ID for guards.
+    } dostat;
   };
   int reg; //Register for result/immediate value.
+
+  union arg1{
+    long l;
+  } arg1;
+
+  union arg2{
+    long l;
+  } arg2;
+
   long int ssaID;
   int blockID;
 
@@ -118,9 +138,10 @@ void clearReg();
 #define PANIC          printf
 
 //Called with function node, enumerates unique block id's
-void assignBlock(NODEPTR_TYPE node, int blockID);
+void assignBlock(NODEPTR_TYPE node);
 
-void createProgramCode(NODEPTR_TYPE statements);
+void generateBlock(NODEPTR_TYPE statements);
+void generateDoStat(NODEPTR_TYPE dostat);
 void invoke_burm(NODEPTR_TYPE root);
 
 int runCompilerPasses(NODEPTR_TYPE root);
@@ -130,6 +151,9 @@ long int assignSSA(NODEPTR_TYPE node);
 int mapSSA(NODEPTR_TYPE node);
 void freeSSA(NODEPTR_TYPE node);
 void clearSSAMapping(void);
+
+//Free all register assignments originating from the given node's block.
+void freeBlockSSA(NODEPTR_TYPE bnode);
 
 int assignBlocks(NODEPTR_TYPE root);
 
