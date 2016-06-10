@@ -22,7 +22,6 @@ typedef struct symList
 {
   struct symList *next;
   const char* name; //Name of the variable
-  int ssaID;
   union {
     struct {
       enum variableLocation location;
@@ -112,7 +111,6 @@ typedef struct tNode
     long l;
   } arg2;
 
-  long int ssaID;
   int blockID;
 
 }* nodeptr;

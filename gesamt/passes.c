@@ -24,12 +24,10 @@ int runCompilerPasses(NODEPTR_TYPE root)
   NODEPTR_TYPE arg = root->children[0];
   while(arg != NULL && arg->op != LASTARG)
   {
-    assignSSA(arg);
-    mapSSA(arg);
+    arg->reg = newReg();
     psymList s = symFind(arg->symbols, arg->name);
     s->pos.location = VAR_REG;
     s->pos.reg = arg->reg;
-    s->ssaID = arg->ssaID;
     s->blockID = arg->blockID;
     //fprintf(stderr, "Assigned par %s to ssa:%ld reg:%d(%s) \n", arg->name, s->ssaID, s->reg, regNames[s->reg]);
     arg = arg->children[0];
@@ -397,84 +395,6 @@ void freeBlockSSA(NODEPTR_TYPE bnode)
     s = s->next;
   }
 }
-
-int mapSSA(NODEPTR_TYPE node)
-{
-  assert(node->ssaID != 0);
-  pRegMap m = (pRegMap) malloc(sizeof(*m));
-  m->ssaID = node->ssaID;
-  m->registerID = newReg();
-  m->next = 0;
-
-  if(ssaMappings == NULL)
-  {
-    ssaMappings = m;
-  }
-  else
-  {
-    pRegMap index = ssaMappings;
-    while(index->next != NULL)
-    {
-      index = index->next;
-    }
-    index->next = m;
-  }
-  node->reg = m->registerID;
-  return m->registerID;
-}
-
-void freeSSA(NODEPTR_TYPE node)
-{
-  pRegMap index = ssaMappings;
-  pRegMap prev;
-  assert(index !=NULL);
-  if(index->ssaID == node->ssaID)
-  {
-    freeReg(index->registerID);
-    ssaMappings = index->next;
-    return;
-  }
-
-  while(index->next != NULL)
-  {
-    prev = index;
-    index = index->next;
-    if(index->ssaID == node->ssaID)
-    {
-      prev->next = index->next;
-      freeReg(index->registerID);
-      free(index);
-      return;
-    }
-  }
-  if(index->ssaID == node->ssaID)
-  {
-    prev->next = NULL;
-    freeReg(index->registerID);
-    free(index);
-    return;
-  }
-  assert(0);
-}
-
-void clearSSAMapping()
-{
-  if(ssaMappings == NULL)
-    return;
-  pRegMap next;
-  do {
-    next = ssaMappings->next;
-    free(ssaMappings);
-    ssaMappings = next;
-  } while(ssaMappings != NULL);
-  ssaMappings = NULL;
-}
-
-long int assignSSA(NODEPTR_TYPE node)
-{
-  node->ssaID = ++ssaID;
-}
-
 
 /* Block assignment */
 

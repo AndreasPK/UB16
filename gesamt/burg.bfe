@@ -73,8 +73,8 @@ char codeBuffer[2048];
 
 void defVar(NODEPTR_TYPE bnode)
 {
-  assignSSA(bnode);
-  mapSSA(bnode);
+  //assignSSA(bnode);
+  //mapSSA(bnode);
 }
 
 void emit(const char* what, NODEPTR_TYPE bnode )
