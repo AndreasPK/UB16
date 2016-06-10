@@ -414,23 +414,25 @@ void freeBlockSSA(NODEPTR_TYPE bnode)
 {
   psymList s;
   s = bnode->symbols;
+  int stackCount = 0;
   while(1)
   {
     if(s == NULL)
-      return;
+      break;
     if(s->blockID == bnode->blockID && s->type == ST_VAR)
     {
       if(s->pos.location == VAR_REG)
         freeReg(s->pos.reg);
       else if(s->pos.location == VAR_STACK)
       {
-        printf(
-            "#remove var from stack\n"
-            "subq $8, %%rsp\n");
+        stackCount++;
       }
     }
     s = s->next;
   }
+  printf(
+    "#remove vars from stack\n"
+    "subq $%d, %%rsp\n", stackCount*8);
 }
 
 /* Block assignment */
