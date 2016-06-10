@@ -6,12 +6,14 @@ const char* regNames[] = { /*immediate val*/ "%rax", /*parameters*/ "%rdi", "%rs
   /*general registers*/ "%r10", "%r11", "T9", "T10", "T11", "T12", "T13" };
 #define REG_COUNT (13)
 
+int stackOffset = 0; //Number of bytes on the stackframe
+
 
 //Called on each function node.
 int runCompilerPasses(NODEPTR_TYPE root)
 {
   //Assign block ids:
-  assignBlock(root); //Block id argument is ignored at function node
+  assignBlock(root);
 
   //Create and verify symbol tables.
   //Adjust symbol block information
@@ -25,7 +27,8 @@ int runCompilerPasses(NODEPTR_TYPE root)
     assignSSA(arg);
     mapSSA(arg);
     psymList s = symFind(arg->symbols, arg->name);
-    s->reg = arg->reg;
+    s->pos.location = VAR_REG;
+    s->pos.reg = arg->reg;
     s->ssaID = arg->ssaID;
     s->blockID = arg->blockID;
     //fprintf(stderr, "Assigned par %s to ssa:%ld reg:%d(%s) \n", arg->name, s->ssaID, s->reg, regNames[s->reg]);
@@ -39,7 +42,7 @@ int runCompilerPasses(NODEPTR_TYPE root)
 
   //Run codegen for Function statements.
   generateBlock(root->children[1]);
-  puts("#Default return:\nret");
+  puts("leave\n#Default return:\nret");
 }
 
 ///Create a copy of the symbol list
@@ -68,7 +71,7 @@ psymList symClone(psymList head)
   return start;
 }
 
-///Symbol is changed and should not be reused.
+///head is changed and should not be reused.
 ///Symbol is added to beginning of the list.
 psymList symAdd(const psymList head, const psymList symbol)
 {
@@ -139,7 +142,7 @@ int newReg()
  * push all allocated registers to the stack. Return pointer to register information before register pushing.
  * Updates count to the number of registers saved to the stack.
  * All registers can be used for terms afterwards.
- * rax doesn't not get pushed to the stack.
+ * rax doesn't get pushed to the stack.
  * */
 struct regInfo **pushRegisters(int* count)
 {
@@ -207,6 +210,22 @@ void clearReg()
   memset(registers, 0, sizeof(registers));
 }
 
+//Move variable to stack, free variable register increase stack offset
+void pushVariable(psymList var)
+{
+  assert(var->type == ST_VAR && var->pos.location == VAR_REG);
+  printf("push %s #pushvar\n", regNames[var->pos.reg]);
+  stackOffset++;
+  var->pos.offset = stackOffset;
+  var->pos.location = VAR_STACK;
+}
+
+void copyVariableToRegister(psymList var, int registerID)
+{
+  assert(var->type == ST_VAR && var->pos.location == VAR_STACK);
+  printf("movq -%d(%%rbp), %s #var2reg\n", var->pos.offset*8, regNames[registerID]);
+}
+
 //Walk the tree of stats, invoking burg for each statement.
 //Called on the STATS node.
 void generateBlock(NODEPTR_TYPE statements)
@@ -223,10 +242,6 @@ void generateBlock(NODEPTR_TYPE statements)
     if(stat->op == DOSTAT)
     {
       generateDoStat(stat);
-    }
-    else if(stat->op == FCALL)
-    {
-      generateCall(stat);
     }
     else
     {
@@ -257,8 +272,16 @@ void generateCall(NODEPTR_TYPE call)
   pregInfo *registers = pushRegisters(&regCount);
 
   //Execute argument setup
+  NODEPTR_TYPE arg = call->children[0];
+  while(arg != NULL)
+  {
+    arg->reg = newReg();
+    invoke_burm(arg);
+    arg = arg->children[1];
+  }
 
   //Call function
+  printf("call %s\n", name);
 
   popRegisters(registers);
 
@@ -360,9 +383,16 @@ void freeBlockSSA(NODEPTR_TYPE bnode)
   {
     if(s == NULL)
       return;
-    if(s->blockID == bnode->blockID)
+    if(s->blockID == bnode->blockID && s->type == ST_VAR)
     {
-      freeReg(s->reg);
+      if(s->pos.location == VAR_REG)
+        freeReg(s->pos.reg);
+      else if(s->pos.location == VAR_STACK)
+      {
+        printf(
+            "#remove var from stack"
+            "subq $8, %%esp\n");
+      }
     }
     s = s->next;
   }

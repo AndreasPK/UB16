@@ -28,6 +28,8 @@ arguments: LASTARG                  # 5 #
 arguments: ARG(arguments)           # 5 #
 code: condition # 5 #
 condition: CONDITION(expr)          # 5 # emit("CONDITION", bnode);
+code: argexpr # 5 #
+argexpr: ARGEXPR(expr)              # 5 # emit("ARGEXPR", bnode);//register set in generateCall
 code: statement                     # 5 #
 statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode);
 variable: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
@@ -44,7 +46,7 @@ expr: READEXPR(term) # 5 # bnode->reg = 0; emit("READEXPR", bnode); freeReg(kids
 expr: term # 5 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
 expr: constant # 19 # bnode->reg = 0; emit("CONSTEXPR", bnode);
 term: constant # 20 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
-term: FCALL # 5 # fprintf(stderr, "Error: Function call handeled in passes.c.\n");
+term: FCALL # 5 # bnode->reg = newReg(); generateCall(bnode);
 term: EXPRTERM(expr) # 5 # bnode->reg = newReg(); emit("EXPR2TERM", bnode);
 constant: CONSTTERM # 0 #
 statement: doexpr # 5 # fprintf(stderr, "DOSTAT: Do not supported.\n"); //printf("do stuff\n"); exit(5);
@@ -54,7 +56,7 @@ statement: VARASSIGN(taddr, expr) # 5 # bnode->reg = kids[0]->reg; emit("MEMVARW
 statement: VARASSIGN(vaddr, expr) # 3 # bnode->reg = kids[0]->reg; emit("MEMVARWRITE", bnode);
 taddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
 vaddr: ADDRWRITE(variable) # 5 # bnode->reg = kids[0]->reg;
-statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->reg = newReg(); bnode->reg=ts->reg; emit("VARDEF", bnode);
+statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->pos.reg = newReg(); bnode->reg=ts->pos.reg; emit("VARDEF", bnode);
 statement: TERMSTAT(term) # 5 # freeReg(kids[0]->reg);
 constant: PLUSEXPR(constant, constant) # 0 # bnode->value = kids[0]->value + kids[1]->value;
 constant: MULTEXPR(constant, constant) # 0 # bnode->value = kids[0]->value * kids[1]->value;
@@ -79,7 +81,17 @@ void emit(const char* what, NODEPTR_TYPE bnode )
 {
   if(strcmp(what, "FUNCTION") == 0)
   {
-    sprintf(codeBuffer, ".global %s\n%s:\n\n", bnode->name, bnode->name);
+    sprintf(codeBuffer,
+    ".global %s\n%s:\n\n"
+    "push %%rbp\n"
+    "movq %%rsp, %%rbp\n",
+    bnode->name, bnode->name);
+  }
+  else if(strcmp(what, "ARGEXPR") == 0)
+  {
+    sprintf(codeBuffer,
+    "#ARGEXPR\n"
+    "movq %%rax, %s\n", regNames[bnode->reg]);
   }
   else if(strcmp(what, "CONDITION") == 0)
   {
@@ -111,7 +123,9 @@ void emit(const char* what, NODEPTR_TYPE bnode )
   }
   else if(strcmp(what, "RETURN") == 0)
   {
-    sprintf(codeBuffer, "ret #RETURN expr -> do nothing as expr results are always in rax\n");
+    sprintf(codeBuffer,
+    "leave\n"
+    "ret #RETURN expr -> do nothing as expr results are always in rax\n");
   }
   else if(strcmp(what, "MINUSEXPR") == 0)
   {
@@ -249,7 +263,7 @@ psymList ts;
 
 int getRegNumber(psymList list, const char* name)
 {
-  return symFind(list, name)->reg;
+  return symFind(list, name)->pos.reg;
 }
 
 /*void allocateParams(psymList par)

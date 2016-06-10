@@ -16,13 +16,21 @@ extern const char* regNames[];
 //Symbol handling.
 enum { ST_ANY = 0, ST_LABEL, ST_VAR };
 
+enum variableLocation { VAR_STACK = 0, VAR_REG };
+
 typedef struct symList
 {
   struct symList *next;
   const char* name; //Name of the variable
   int ssaID;
   union {
-    int reg; //Register index the variable is stored in.
+    struct {
+      enum variableLocation location;
+      union {
+        int reg; //Register index the variable is stored in.
+        int offset; //Offset to ebp
+      };
+    } pos;
     int labelID;
   };
   int type; //Label or Variable

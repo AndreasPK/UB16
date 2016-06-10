@@ -158,22 +158,6 @@ nodeptr updateAstSymbols(nodeptr tree)
 
 }
 
-//Get next free register according to the given symbol list
-int getNextReg(psymList list)
-{
-  if(list == NULL)
-    return 0;
-  else {
-    if(list->type == ST_VAR) {
-      return list->reg +1;
-    }
-    else
-    {
-      return getNextReg(list->next);
-    }
-  }
-}
-
 //Build list of arguments and add them to symbols.
 //element returned should contain the final argument list, can be 0
 nodeptr updateArguments(nodeptr argument)
@@ -205,10 +189,8 @@ nodeptr updateArguments(nodeptr argument)
   s->next = argument->symbols;
   //Assign a register number to the argument. If there are none we start at zero, otherwise
   //we increment the latest register number by one. (The latest variable is at the head of the list).
-  if(argument->symbols == NULL)
-    s->reg = 0;
-  else
-    s->reg = argument->symbols->reg + 1;
+  s->pos.reg = 0;
+
 
   //ARG as last element, no children
   if(argument->children[0] == NULL)
