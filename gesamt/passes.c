@@ -11,9 +11,23 @@ int stackOffset = 0; //Number of bytes on the stackframe
 //Keeps a list of allocated registers. NULL for free registers.
 struct regInfo* registers[REG_COUNT];
 
+void pushVars(psymList s)
+{
+  if(s==NULL)
+    return;
+
+  if(s->next != NULL)
+    pushVars(s->next);
+  
+  if(s->type = ST_VAR)
+  {
+    pushVariable(s);
+  }
+}
 //Called on each function node.
 int runCompilerPasses(NODEPTR_TYPE root)
 {
+  stackOffset = 0;
   //Assign block ids:
   assignBlock(root);
 
@@ -37,16 +51,13 @@ int runCompilerPasses(NODEPTR_TYPE root)
     s->pos.location = VAR_REG;
     s->pos.reg = arg->reg;
     s->blockID = arg->blockID;
-    //fprintf(stderr, "Assigned par %s to ssa:%ld reg:%d(%s) \n", arg->name, s->ssaID, s->reg, regNames[s->reg]);
     arg = arg->children[0];
   }
   assert(arg == NULL || arg->op == LASTARG);
 
-/*
-  psymList v = symFind(root->symbols, "a");
-  if(v != NULL)
-    pushVariable(v);
-*/
+  //Push all variables to stack
+  pushVars(root->children[0]->symbols);
+
   //Run codegen for Function statements.
   generateBlock(root->children[1]);
   puts("leave\n#Default return:\nret");
@@ -208,7 +219,7 @@ void clearReg()
 void pushVariable(psymList var)
 {
   assert(var->type == ST_VAR && var->pos.location == VAR_REG);
-  printf("push %s #pushvar\n", regNames[var->pos.reg]);
+  printf("push %s #pushvar %s\n", regNames[var->pos.reg], var->name);
   stackOffset++;
   freeReg(var->pos.reg);
   var->pos.offset = stackOffset;
