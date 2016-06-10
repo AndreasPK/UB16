@@ -137,7 +137,7 @@ nodeptr updateAstSymbols(nodeptr tree);
 typedef struct regInfo
 {
   int regNumber;
-  int is_argument;
+  int isVar;
 }* pregInfo;
 
 extern struct regInfo* registers[];
@@ -146,8 +146,11 @@ int newReg(void);
 int newArgReg(void);
 void freeReg(int id);
 void clearReg();
-struct regInfo** pushRegisters(int* count);
-void popRegisters(struct regInfo **pushed);
+struct regInfo** pushRegisters(int* count); //Save currently allocated registers
+void popRegisters(struct regInfo **pushed); //Restore previous register allocation
+void pushVariable(psymList var); //Move variable to stack
+void getVarToReg(psymList var, int registerID); //Move variable to register
+const char* getVarPos(psymList var); //Returns pointer to static buffer
 
 
 #define NODEPTR_TYPE   nodeptr

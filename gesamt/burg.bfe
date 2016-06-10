@@ -32,9 +32,9 @@ code: argexpr # 5 #
 argexpr: ARGEXPR(expr)              # 5 # emit("ARGEXPR", bnode);//register set in generateCall
 code: statement                     # 5 #
 statement: RETURNSTAT(expr) # 5 # emit("RETURN", bnode);
-variable: VARUSE # 5 # bnode->reg = getRegNumber(bnode->symbols, bnode->name);
-term: variable # 15 # bnode->arg1.l = bnode->reg; bnode->reg = newReg(); emit("VAR2TERM", bnode);
-expr: variable # 5 # bnode->arg1.l = bnode->reg; emit("VAR2EXPR", bnode);
+variable: VARUSE # 5 # bnode->reg = 13;//getRegNumber(bnode->symbols, bnode->name);
+term: variable # 15 # bnode->reg = newReg(); emit("VAR2TERM", bnode);
+expr: variable # 5 # bnode->reg = 0; emit("VAR2EXPR", bnode);
 expr: NOTEXPR(expr) # 5 # bnode->reg=0; emit("NOTEXPR", bnode);
 expr: MINUSEXPR(expr) # 99 # bnode->reg=0; emit("MINUSEXPR", bnode);
 expr: PLUSEXPR(term, expr) # 5 # bnode->reg = 0; emit("PLUSEXPR", bnode); freeReg(kids[0]->reg);
@@ -46,7 +46,7 @@ expr: READEXPR(term) # 5 # bnode->reg = 0; emit("READEXPR", bnode); freeReg(kids
 expr: term # 5 # emit("TERM2EXPR", bnode); freeReg(kids[0]->reg);
 expr: constant # 19 # bnode->reg = 0; emit("CONSTEXPR", bnode);
 term: constant # 20 # bnode->reg = newReg(); emit("CONSTTERM", bnode);
-term: FCALL # 5 # bnode->reg = newReg(); generateCall(bnode);
+term: FCALL # 5 # generateCall(bnode);
 term: EXPRTERM(expr) # 5 # bnode->reg = newReg(); emit("EXPR2TERM", bnode);
 constant: CONSTTERM # 0 #
 statement: doexpr # 5 # fprintf(stderr, "DOSTAT: Do not supported.\n"); //printf("do stuff\n"); exit(5);
@@ -55,8 +55,8 @@ statement: VARASSIGN(variable, expr) # 5 # emit("VARASSIGN", bnode);
 statement: VARASSIGN(taddr, expr) # 5 # bnode->reg = kids[0]->reg; emit("MEMVARWRITE", bnode); freeReg(kids[0]->reg);
 statement: VARASSIGN(vaddr, expr) # 3 # bnode->reg = kids[0]->reg; emit("MEMVARWRITE", bnode);
 taddr: ADDRWRITE(term) # 5 # bnode->reg = kids[0]->reg;
-vaddr: ADDRWRITE(variable) # 5 # bnode->reg = kids[0]->reg;
-statement: VARDEF(expr) # 5 # ts = symFind(bnode->symbols, bnode->name); ts->pos.reg = newReg(); bnode->reg=ts->pos.reg; emit("VARDEF", bnode);
+vaddr: ADDRWRITE(variable) # 99 # //avoid variable special casing for stack  bnode->reg = kids[0]->reg;
+statement: VARDEF(expr) # 5 # emit("VARDEF", bnode);
 statement: TERMSTAT(term) # 5 # freeReg(kids[0]->reg);
 constant: PLUSEXPR(constant, constant) # 0 # bnode->value = kids[0]->value + kids[1]->value;
 constant: MULTEXPR(constant, constant) # 0 # bnode->value = kids[0]->value * kids[1]->value;
@@ -66,7 +66,7 @@ constant: MINUSEXPR(constant) # 0 # bnode->value = - (kids[0]->value);
 constant: EQUALEXPR(constant, constant) # 0 # bnode->value = (kids[0]->value == kids[1]->value) ? (-1) : 0;
 constant: LESSEXPR(constant, constant) # 0 # bnode->value = (kids[0]->value < kids[1]->value) ? (-1) : 0;
 term: PLUSEXPR(term, constant) # 2 # bnode->reg = kids[0]->reg; printf("addq $%ld, %s\n", kids[1]->value, regNames[kids[0]->reg]);
-expr: PLUSEXPR(variable, expr) # 1 # bnode->reg = 0; printf("addq %s, %%rax\n", regNames[kids[0]->reg]);
+expr: PLUSEXPR(variable, expr) # 1 # bnode->reg = 0; printf("addq %s, %%rax\n", getVarPos(symFind(kids[0]->symbols, kids[0]->name)));
 %%
 
 char codeBuffer[2048];
@@ -82,10 +82,10 @@ void emit(const char* what, NODEPTR_TYPE bnode )
   if(strcmp(what, "FUNCTION") == 0)
   {
     sprintf(codeBuffer,
-    ".global %s\n%s:\n\n"
+    "\n#Function %s\n.global %s\n%s:\n\n"
     "push %%rbp\n"
     "movq %%rsp, %%rbp\n",
-    bnode->name, bnode->name);
+    bnode->name, bnode->name, bnode->name);
   }
   else if(strcmp(what, "ARGEXPR") == 0)
   {
@@ -107,19 +107,22 @@ void emit(const char* what, NODEPTR_TYPE bnode )
   //Register of the variable is storeg in arg1, reg contains target register.
   else if(strcmp(what, "VAR2TERM") == 0)
   {
+    psymList var = symFind(bnode->symbols, bnode->name);
     sprintf(codeBuffer,
     "#VAR2TERM\n"
     "movq %1$s, %2$s\n",
-    regNames[bnode->arg1.l], regNames[bnode->reg]
+    getVarPos(var), regNames[bnode->reg]
     );
   }
   else if(strcmp(what, "VAR2EXPR") == 0)
   {
+    emit("VAR2TERM", bnode);
+    /*
     sprintf(codeBuffer,
     "#VAR2EXPR\n"
     "movq %1$s, %%rax\n",
     regNames[bnode->arg1.l]
-    );
+    );*/
   }
   else if(strcmp(what, "RETURN") == 0)
   {
@@ -217,22 +220,26 @@ void emit(const char* what, NODEPTR_TYPE bnode )
       "movq %1$s, (%2$s) # *%2$s := %1$s\n",
       regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
   }
-  //TODO
+  //Create a new variable in a register
   else if(strcmp(what, "VARDEF") == 0)
   {
-    //var = expr;
+    psymList var = symFind(bnode->symbols, bnode->name);
+    var->pos.reg = newReg();
+    var->pos.location = VAR_REG;
+    registers[var->pos.reg]->isVar = 1;
+    bnode->reg=var->pos.reg;
     sprintf(codeBuffer,
       "#WRITE TO VAR(DEF)\n"
       "movq %1$s, %2$s # %2$s := %1$s\n",
-      regNames[LEFT_CHILD(bnode)->reg], regNames[bnode->reg]);
+      regNames[LEFT_CHILD(bnode)->reg], getVarPos(var));
   }
   else if(strcmp(what, "VARASSIGN") == 0)
   {
-    //var = expr;
+    psymList var = symFind(bnode->symbols, bnode->children[0]->name);
     sprintf(codeBuffer,
       "#WRITE TO VAR(VARASSIGN)\n"
       "movq %1$s, %2$s # %2$s := %1$s\n",
-      regNames[RIGHT_CHILD(bnode)->reg], regNames[LEFT_CHILD(bnode)->reg]);
+      regNames[RIGHT_CHILD(bnode)->reg], getVarPos(var));
   }
   else if(strcmp(what, "EXPR2TERM") == 0)
   {

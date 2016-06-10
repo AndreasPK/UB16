@@ -8,6 +8,8 @@ const char* regNames[] = { /*immediate val*/ "%rax", /*parameters*/ "%rdi", "%rs
 
 int stackOffset = 0; //Number of bytes on the stackframe
 
+//Keeps a list of allocated registers. NULL for free registers.
+struct regInfo* registers[REG_COUNT];
 
 //Called on each function node.
 int runCompilerPasses(NODEPTR_TYPE root)
@@ -19,12 +21,18 @@ int runCompilerPasses(NODEPTR_TYPE root)
   //Adjust symbol block information
   updateAstSymbols(root);
 
-  //Reserve argument ids.
   clearReg();
+
+  //Generate Function boilerplate (Label, Stackframe)
+  invoke_burm(root);
+
+  //Reserve argument registers.
   NODEPTR_TYPE arg = root->children[0];
   while(arg != NULL && arg->op != LASTARG)
   {
     arg->reg = newReg();
+    registers[arg->reg]->isVar = 1;
+
     psymList s = symFind(arg->symbols, arg->name);
     s->pos.location = VAR_REG;
     s->pos.reg = arg->reg;
@@ -34,10 +42,11 @@ int runCompilerPasses(NODEPTR_TYPE root)
   }
   assert(arg == NULL || arg->op == LASTARG);
 
-
-  //Generate code for this function. (Function label)
-  invoke_burm(root);
-
+/*
+  psymList v = symFind(root->symbols, "a");
+  if(v != NULL)
+    pushVariable(v);
+*/
   //Run codegen for Function statements.
   generateBlock(root->children[1]);
   puts("leave\n#Default return:\nret");
@@ -115,9 +124,6 @@ nodeptr newChildNode(int op, nodeptr left, nodeptr right)
   return n;
 }
 
-//Keeps a list of allocated registers. NULL for free registers.
-struct regInfo* registers[REG_COUNT];
-
 int newReg()
 {
   for(int i = 1; i < REG_COUNT; i++)
@@ -145,7 +151,7 @@ int newReg()
 struct regInfo **pushRegisters(int* count)
 {
   assert(count != NULL);
-
+  
   pregInfo* pushed = (pregInfo*) malloc(sizeof (registers));
   memcpy(pushed, registers, sizeof(registers));
   *count == 0;
@@ -177,21 +183,10 @@ void popRegisters(pregInfo* pushed)
   free(pushed);
 }
 
-int newArgReg(void)
-{
-  int reg = newReg();
-  registers[reg]->is_argument = 1;
-  return reg;
-}
-
 void freeReg(int id)
 {
   if(id == -1 || id == 0)
     return;
-  if(registers[id]->is_argument) {
-    //printf("Keeping argument in register.\n");
-    return;
-  }
 
   //printf("Freeing r%d\n", id);
   if(registers[id] == NULL)
@@ -208,20 +203,34 @@ void clearReg()
   memset(registers, 0, sizeof(registers));
 }
 
-//Move variable to stack, free variable register increase stack offset
+//Move variable to stack, free variable register, increase stack offset
+//Stack is cleaned up on block exit
 void pushVariable(psymList var)
 {
   assert(var->type == ST_VAR && var->pos.location == VAR_REG);
   printf("push %s #pushvar\n", regNames[var->pos.reg]);
   stackOffset++;
+  freeReg(var->pos.reg);
   var->pos.offset = stackOffset;
   var->pos.location = VAR_STACK;
 }
 
-void copyVariableToRegister(psymList var, int registerID)
+const char* getVarPos(psymList var)
 {
-  assert(var->type == ST_VAR && var->pos.location == VAR_STACK);
-  printf("movq -%d(%%rbp), %s #var2reg\n", var->pos.offset*8, regNames[registerID]);
+  assert(var->type == ST_VAR);
+  static char vpos[256];
+
+  if(var->pos.location == VAR_REG)
+    sprintf(vpos, "%s", regNames[var->pos.reg]);
+  else if(var->pos.location == VAR_STACK)
+    sprintf(vpos, "-%d(%%rbp)", var->pos.offset*8);
+
+  return vpos;
+}
+//Move a variable (from wherever) into the given register
+void getVarToReg(psymList var, int registerID)
+{
+   printf("movq %s, %s #var2reg\n", getVarPos(var), regNames[registerID]);
 }
 
 //Walk the tree of stats, invoking burg for each statement.
@@ -258,15 +267,29 @@ void generateBlock(NODEPTR_TYPE statements)
   }
 }
 
+//Generate a function call.
 void generateCall(NODEPTR_TYPE call)
 {
   const char* name = call->name;
   assert(name != NULL);
 
-  printf(".extern %s\n", name);
+  printf("#call %1$s\n.extern %1$s\n", name);
+
+  //Save variables to stack
+  for(psymList var = call->symbols; var != NULL; var = var->next)
+  {
+    if(var->type == ST_LABEL)
+      continue;
+    else
+    {
+      if(var->pos.location == VAR_REG)
+      {
+        pushVariable(var);
+      }
+    }
+  }
 
   int regCount = 0;
-  call->reg = newReg();//Reserve register for function result.
   pregInfo *registers = pushRegisters(&regCount);
 
   //Execute argument setup
@@ -281,7 +304,10 @@ void generateCall(NODEPTR_TYPE call)
   //Call function
   printf("call %s\n", name);
 
+  //Restore caller saved registers
   popRegisters(registers);
+
+  call->reg = newReg();
 
   printf("movq %%rax, %s\n", regNames[call->reg]);
   //Move rax to call->reg
@@ -388,8 +414,8 @@ void freeBlockSSA(NODEPTR_TYPE bnode)
       else if(s->pos.location == VAR_STACK)
       {
         printf(
-            "#remove var from stack"
-            "subq $8, %%esp\n");
+            "#remove var from stack\n"
+            "subq $8, %%rsp\n");
       }
     }
     s = s->next;
