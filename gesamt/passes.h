@@ -170,11 +170,6 @@ void invoke_burm(NODEPTR_TYPE root);
 
 int runCompilerPasses(NODEPTR_TYPE root);
 
-//Assign a id for a storable term.
-long int assignSSA(NODEPTR_TYPE node);
-int mapSSA(NODEPTR_TYPE node);
-void freeSSA(NODEPTR_TYPE node);
-void clearSSAMapping(void);
 
 //Free all register assignments originating from the given node's block.
 void freeBlockSSA(NODEPTR_TYPE bnode);

@@ -58,13 +58,13 @@ int runCompilerPasses(NODEPTR_TYPE root)
   //Push all variables to stack
   pushVars(root->children[0]->symbols);
 
-  //Run codegen for Function statements.
+  //Run codegen for Function statements. 
   generateBlock(root->children[1]);
   puts("leave\n#Default return:\nret");
 }
 
 ///Create a copy of the symbol list
-psymList symClone(psymList head)
+/*psymList symClone(psymList head)
 {
   if(head == NULL)
     return NULL;
@@ -87,7 +87,7 @@ psymList symClone(psymList head)
     }
   }
   return start;
-}
+}*/
 
 ///head is changed and should not be reused.
 ///Symbol is added to beginning of the list.
@@ -401,13 +401,13 @@ void generateDoStat(NODEPTR_TYPE dostat)
  * */
 long int ssaID;
 
-typedef struct ssaMapping{
+/*typedef struct ssaMapping{
   long int ssaID;
   int registerID;
   struct ssaMapping* next;
-}* pRegMap;
+}* pRegMap;*/
 
-pRegMap ssaMappings = NULL;
+//pRegMap ssaMappings = NULL;
 
 //For each symbol defined in the nodes block free it's register.
 void freeBlockSSA(NODEPTR_TYPE bnode)
